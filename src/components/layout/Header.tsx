@@ -45,6 +45,9 @@ export function Header() {
             <Link to="/services" className="text-foreground/80 hover:text-gold transition-colors">
               Services
             </Link>
+            <Link to="/event-builder" className="text-foreground/80 hover:text-gold transition-colors flex items-center gap-1">
+              <span className="text-gold">✨</span> Event Builder
+            </Link>
             <Link to="/categories" className="text-foreground/80 hover:text-gold transition-colors">
               Categories
             </Link>
@@ -184,9 +187,11 @@ export function Header() {
                 {[
                   { to: '/', label: 'Home' },
                   { to: '/services', label: 'Services' },
+                  { to: '/event-builder', label: '✨ Event Builder' },
                   { to: '/categories', label: 'Categories' },
                   { to: '/vendors', label: 'Vendors' },
                   { to: '/wishlist', label: 'Wishlist' },
+                  { to: '/saved-plans', label: 'Saved Plans' },
                   { to: '/bookings', label: 'My Bookings' },
                 ].map((item) => (
                   <Link

@@ -13,6 +13,8 @@ import Checkout from "./pages/Checkout";
 import Bookings from "./pages/Bookings";
 import Categories from "./pages/Categories";
 import Vendors from "./pages/Vendors";
+import EventBuilder from "./pages/EventBuilder";
+import SavedPlans from "./pages/SavedPlans";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +36,8 @@ const App = () => (
           <Route path="/bookings" element={<Bookings />} />
           <Route path="/categories" element={<Categories />} />
           <Route path="/vendors" element={<Vendors />} />
+          <Route path="/event-builder" element={<EventBuilder />} />
+          <Route path="/saved-plans" element={<SavedPlans />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
