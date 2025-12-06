@@ -63,6 +63,20 @@ export interface User {
   avatar?: string;
 }
 
+export interface SavedPlan {
+  id: string;
+  name: string;
+  eventType: string;
+  theme: string;
+  colorPalette: string;
+  guestSize: string;
+  venueType: string;
+  budget: string;
+  eventDate?: string;
+  createdAt: string;
+  packages: any[];
+}
+
 interface AppState {
   // Auth
   user: User | null;
@@ -88,6 +102,11 @@ interface AppState {
   bookings: Booking[];
   addBooking: (booking: Booking) => void;
   updateBookingStatus: (bookingId: string, status: Booking['status']) => void;
+
+  // Saved Plans
+  savedPlans: SavedPlan[];
+  addSavedPlan: (plan: SavedPlan) => void;
+  removeSavedPlan: (planId: string) => void;
 
   // Search
   searchQuery: string;
@@ -172,6 +191,15 @@ export const useStore = create<AppState>()(
         });
       },
 
+      // Saved Plans
+      savedPlans: [],
+      addSavedPlan: (plan) => {
+        set({ savedPlans: [...get().savedPlans, plan] });
+      },
+      removeSavedPlan: (planId) => {
+        set({ savedPlans: get().savedPlans.filter((p) => p.id !== planId) });
+      },
+
       // Search
       searchQuery: '',
       setSearchQuery: (query) => set({ searchQuery: query }),
@@ -186,6 +214,7 @@ export const useStore = create<AppState>()(
         cart: state.cart,
         wishlist: state.wishlist,
         bookings: state.bookings,
+        savedPlans: state.savedPlans,
       }),
     }
   )
