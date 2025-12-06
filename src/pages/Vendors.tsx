@@ -1,12 +1,26 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
-import { Star, MapPin, BadgeCheck, ArrowRight } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Star, MapPin, BadgeCheck, ArrowRight, Users } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { MultiVendorSelector } from '@/components/vendors/MultiVendorSelector';
 import { vendors, services } from '@/data/services';
+import { toast } from 'sonner';
 
 export default function Vendors() {
+  const navigate = useNavigate();
+  const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
+  const [eventDate, setEventDate] = useState<Date | undefined>();
+
+  const handleMultiVendorProceed = () => {
+    // Navigate to services page with selected vendors filter
+    const vendorParam = selectedVendors.join(',');
+    navigate(`/services?vendors=${vendorParam}`);
+    toast.success('Viewing services from selected vendors');
+  };
+
   return (
     <Layout>
       <div className="container mx-auto px-4 py-12">
@@ -23,6 +37,22 @@ export default function Vendors() {
           </p>
         </motion.div>
 
+        {/* Multi-Vendor Booking */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mb-8"
+        >
+          <MultiVendorSelector
+            selectedVendors={selectedVendors}
+            onVendorsChange={setSelectedVendors}
+            eventDate={eventDate}
+            onEventDateChange={setEventDate}
+            onProceed={handleMultiVendorProceed}
+          />
+        </motion.div>
+
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {vendors.map((vendor, index) => {
             const vendorServices = services.filter((s) => s.vendorId === vendor.id);
@@ -32,7 +62,7 @@ export default function Vendors() {
                 key={vendor.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
+                transition={{ delay: 0.1 + index * 0.05 }}
                 className="group bg-card rounded-2xl border overflow-hidden hover:shadow-elevated transition-all duration-300"
               >
                 <div className="relative h-32 bg-gradient-to-r from-gold/20 to-gold-light/20">
@@ -76,9 +106,9 @@ export default function Vendors() {
                     <span className="font-medium">{vendorServices.length} available</span>
                   </p>
                   
-                  <Link to={`/services?vendor=${vendor.id}`}>
+                  <Link to={`/vendor/${vendor.id}`}>
                     <Button variant="gold-outline" className="w-full group/btn">
-                      View Services
+                      View Profile
                       <ArrowRight className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" />
                     </Button>
                   </Link>
