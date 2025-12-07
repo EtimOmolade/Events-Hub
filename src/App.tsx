@@ -16,6 +16,8 @@ import Vendors from "./pages/Vendors";
 import VendorDetail from "./pages/VendorDetail";
 import EventBuilder from "./pages/EventBuilder";
 import SavedPlans from "./pages/SavedPlans";
+import Admin from "./pages/Admin";
+import AdminLogin from "./pages/AdminLogin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +42,8 @@ const App = () => (
           <Route path="/vendor/:id" element={<VendorDetail />} />
           <Route path="/event-builder" element={<EventBuilder />} />
           <Route path="/saved-plans" element={<SavedPlans />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

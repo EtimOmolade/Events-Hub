@@ -3,25 +3,17 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, ShoppingBag, Heart, User, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useStore } from '@/store/useStore';
-import { cn } from '@/lib/utils';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { SmartSearch } from '@/components/ui/SmartSearch';
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const navigate = useNavigate();
-  const { cart, wishlist, isAuthenticated, searchQuery, setSearchQuery } = useStore();
+  const { cart, wishlist, isAuthenticated } = useStore();
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/services?search=${encodeURIComponent(searchQuery)}`);
-      setIsSearchOpen(false);
-    }
-  };
 
   return (
     <header className="sticky top-0 z-50 glass border-b border-border/50">
@@ -57,7 +49,8 @@ export function Header() {
           </nav>
 
           {/* Desktop Actions */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-2">
+            <ThemeToggle />
             <Button
               variant="ghost"
               size="icon"
@@ -107,6 +100,7 @@ export function Header() {
 
           {/* Mobile Menu Button */}
           <div className="flex md:hidden items-center gap-2">
+            <ThemeToggle />
             <Link to="/cart">
               <Button variant="ghost" size="icon" className="relative">
                 <ShoppingBag className="h-5 w-5" />
@@ -124,39 +118,8 @@ export function Header() {
         </div>
       </div>
 
-      {/* Search Overlay */}
-      <AnimatePresence>
-        {isSearchOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-background/95 backdrop-blur-lg z-50 flex items-start justify-center pt-32"
-          >
-            <div className="w-full max-w-2xl px-4">
-              <form onSubmit={handleSearch} className="relative">
-                <Input
-                  type="text"
-                  placeholder="Search services, vendors, categories..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-14 text-lg pl-14 pr-4 rounded-xl border-2 border-gold/30 focus:border-gold"
-                  autoFocus
-                />
-                <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              </form>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsSearchOpen(false)}
-                className="absolute top-8 right-8"
-              >
-                <X className="h-6 w-6" />
-              </Button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Smart Search Overlay */}
+      <SmartSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
 
       {/* Mobile Menu */}
       <AnimatePresence>
@@ -166,7 +129,7 @@ export function Header() {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed inset-0 bg-background z-50 lg:hidden"
+            className="fixed inset-0 bg-card z-50 lg:hidden"
           >
             <div className="flex flex-col h-full p-6">
               <div className="flex items-center justify-between mb-8">
@@ -183,7 +146,17 @@ export function Header() {
                 </Button>
               </div>
 
-              <nav className="flex flex-col gap-4 flex-1">
+              {/* Search in mobile menu */}
+              <Button
+                variant="outline"
+                className="w-full justify-start mb-6 text-muted-foreground"
+                onClick={() => { setIsMenuOpen(false); setIsSearchOpen(true); }}
+              >
+                <Search className="h-4 w-4 mr-2" />
+                Search services...
+              </Button>
+
+              <nav className="flex flex-col gap-2 flex-1">
                 {[
                   { to: '/', label: 'Home' },
                   { to: '/services', label: 'Services' },
@@ -198,7 +171,7 @@ export function Header() {
                     key={item.to}
                     to={item.to}
                     onClick={() => setIsMenuOpen(false)}
-                    className="text-xl font-medium py-3 border-b border-border/50 hover:text-gold transition-colors"
+                    className="text-lg font-medium py-3 px-4 rounded-lg hover:bg-muted hover:text-gold transition-colors"
                   >
                     {item.label}
                   </Link>
