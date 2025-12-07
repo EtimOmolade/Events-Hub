@@ -84,6 +84,11 @@ interface AppState {
   login: (user: User) => void;
   logout: () => void;
 
+  // Admin Auth
+  isAdminAuthenticated: boolean;
+  adminLogin: () => void;
+  adminLogout: () => void;
+
   // Cart
   cart: CartItem[];
   addToCart: (service: Service, quantity?: number) => void;
@@ -113,6 +118,14 @@ interface AppState {
   setSearchQuery: (query: string) => void;
   selectedCategory: string | null;
   setSelectedCategory: (category: string | null) => void;
+
+  // Recent searches
+  recentSearches: string[];
+  addRecentSearch: (term: string) => void;
+
+  // Recently viewed
+  recentlyViewed: Service[];
+  addRecentlyViewed: (service: Service) => void;
 }
 
 export const useStore = create<AppState>()(
@@ -123,6 +136,11 @@ export const useStore = create<AppState>()(
       isAuthenticated: false,
       login: (user) => set({ user, isAuthenticated: true }),
       logout: () => set({ user: null, isAuthenticated: false, cart: [], bookings: [] }),
+
+      // Admin Auth
+      isAdminAuthenticated: false,
+      adminLogin: () => set({ isAdminAuthenticated: true }),
+      adminLogout: () => set({ isAdminAuthenticated: false }),
 
       // Cart
       cart: [],
@@ -205,16 +223,35 @@ export const useStore = create<AppState>()(
       setSearchQuery: (query) => set({ searchQuery: query }),
       selectedCategory: null,
       setSelectedCategory: (category) => set({ selectedCategory: category }),
+
+      // Recent searches
+      recentSearches: [],
+      addRecentSearch: (term) => {
+        const { recentSearches } = get();
+        const filtered = recentSearches.filter(s => s.toLowerCase() !== term.toLowerCase());
+        set({ recentSearches: [term, ...filtered].slice(0, 10) });
+      },
+
+      // Recently viewed
+      recentlyViewed: [],
+      addRecentlyViewed: (service) => {
+        const { recentlyViewed } = get();
+        const filtered = recentlyViewed.filter(s => s.id !== service.id);
+        set({ recentlyViewed: [service, ...filtered].slice(0, 10) });
+      },
     }),
     {
       name: 'events-hub-storage',
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
+        isAdminAuthenticated: state.isAdminAuthenticated,
         cart: state.cart,
         wishlist: state.wishlist,
         bookings: state.bookings,
         savedPlans: state.savedPlans,
+        recentSearches: state.recentSearches,
+        recentlyViewed: state.recentlyViewed,
       }),
     }
   )
