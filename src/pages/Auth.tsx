@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Lock, User, Eye, EyeOff, Loader2 } from 'lucide-react';
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useStore } from '@/store/useStore';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
 export default function Auth() {
@@ -14,6 +15,7 @@ export default function Auth() {
   const redirect = searchParams.get('redirect') || '/';
   const navigate = useNavigate();
   const { login } = useStore();
+  const { signIn, signUp, isAuthenticated } = useAuth();
 
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
@@ -24,6 +26,13 @@ export default function Auth() {
     password: '',
     confirmPassword: '',
   });
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate(redirect);
+    }
+  }, [isAuthenticated, navigate, redirect]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -40,24 +49,72 @@ export default function Auth() {
       return;
     }
 
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast.error('Please enter a valid email address');
+      setIsLoading(false);
+      return;
+    }
+
+    // Password validation
+    if (formData.password.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      setIsLoading(false);
+      return;
+    }
+
     if (!isLogin && formData.password !== formData.confirmPassword) {
       toast.error('Passwords do not match');
       setIsLoading(false);
       return;
     }
 
-    // Simulate authentication
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      if (isLogin) {
+        // Login flow
+        const { error } = await signIn(formData.email, formData.password);
+        
+        if (error) {
+          if (error.message.includes('Invalid login credentials')) {
+            toast.error('Account not found. Please sign up first.');
+          } else {
+            toast.error(error.message);
+          }
+          setIsLoading(false);
+          return;
+        }
 
-    const user = {
-      id: 'user-1',
-      name: formData.name || formData.email.split('@')[0],
-      email: formData.email,
-    };
+        // Update local store
+        const user = {
+          id: 'user-1',
+          name: formData.name || formData.email.split('@')[0],
+          email: formData.email,
+        };
+        login(user);
+        toast.success('Welcome back!');
+        navigate(redirect);
+      } else {
+        // Signup flow
+        const { error } = await signUp(formData.email, formData.password);
+        
+        if (error) {
+          if (error.message.includes('User already registered')) {
+            toast.error('This email is already registered. Please sign in instead.');
+          } else {
+            toast.error(error.message);
+          }
+          setIsLoading(false);
+          return;
+        }
 
-    login(user);
-    toast.success(isLogin ? 'Welcome back!' : 'Account created successfully!');
-    navigate(redirect);
+        toast.success('Account created! Please check your email to confirm your account.');
+        setIsLogin(true);
+      }
+    } catch (err) {
+      toast.error('An unexpected error occurred. Please try again.');
+    }
+
     setIsLoading(false);
   };
 
