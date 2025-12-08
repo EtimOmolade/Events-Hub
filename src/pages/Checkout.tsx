@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { CalendarDays, MapPin, Users, Wallet, CreditCard, Building, Loader2, Check } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { CalendarDays, MapPin, Users, Wallet, CreditCard, Building, Loader2, Check, Sparkles, Heart } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useStore, Booking } from '@/store/useStore';
 import { formatPrice } from '@/data/services';
 import { toast } from 'sonner';
@@ -28,6 +29,7 @@ export default function Checkout() {
   const { cart, getCartTotal, clearCart, addBooking, user } = useStore();
   const [isProcessing, setIsProcessing] = useState(false);
   const [step, setStep] = useState<'details' | 'payment' | 'success'>('details');
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   const [formData, setFormData] = useState({
     eventType: '',
@@ -68,7 +70,7 @@ export default function Checkout() {
     setIsProcessing(true);
 
     // Simulate payment processing
-    await new Promise((resolve) => setTimeout(resolve, 2500));
+    await new Promise((resolve) => setTimeout(resolve, 1500));
 
     const booking: Booking = {
       id: `BK-${Date.now()}`,
@@ -88,8 +90,13 @@ export default function Checkout() {
 
     addBooking(booking);
     clearCart();
-    setStep('success');
     setIsProcessing(false);
+    setShowPaymentModal(true);
+  };
+
+  const handleModalClose = () => {
+    setShowPaymentModal(false);
+    setStep('success');
   };
 
   if (step === 'success') {
@@ -127,6 +134,58 @@ export default function Checkout() {
   }
 
   return (
+    <>
+      {/* Payment Success Modal */}
+      <Dialog open={showPaymentModal} onOpenChange={handleModalClose}>
+        <DialogContent className="sm:max-w-md text-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="py-6"
+          >
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-gold to-gold-light flex items-center justify-center mx-auto mb-6">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+              >
+                <Check className="w-10 h-10 text-rich-black" />
+              </motion.div>
+            </div>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <Sparkles className="w-5 h-5 text-gold" />
+                <h2 className="font-display text-2xl font-bold">Payment Received!</h2>
+                <Sparkles className="w-5 h-5 text-gold" />
+              </div>
+              
+              <p className="text-muted-foreground mb-4">
+                Thank you for trusting us with your special moments.
+              </p>
+              
+              <div className="flex items-center justify-center gap-1 text-gold mb-6">
+                <Heart className="w-4 h-4 fill-current" />
+                <span className="text-sm font-medium">Your support keeps us in business!</span>
+                <Heart className="w-4 h-4 fill-current" />
+              </div>
+              
+              <p className="text-sm text-muted-foreground mb-6">
+                We're excited to help make your event unforgettable. You'll receive a confirmation email shortly.
+              </p>
+              
+              <Button variant="gold" size="lg" onClick={handleModalClose} className="w-full">
+                Continue
+              </Button>
+            </motion.div>
+          </motion.div>
+        </DialogContent>
+      </Dialog>
+
     <Layout>
       <div className="container mx-auto px-4 py-8">
         <h1 className="font-display text-3xl md:text-4xl font-bold mb-8">
@@ -420,5 +479,6 @@ export default function Checkout() {
         </div>
       </div>
     </Layout>
+    </>
   );
 }
