@@ -166,7 +166,7 @@ export function Header() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 lg:hidden"
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 md:hidden"
               onClick={() => setIsMenuOpen(false)}
             />
             {/* Menu panel */}
@@ -175,7 +175,7 @@ export function Header() {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed inset-y-0 right-0 w-full max-w-sm bg-background border-l border-border z-50 lg:hidden overflow-y-auto"
+              className="fixed inset-y-0 right-0 w-full max-w-sm bg-background border-l border-border z-50 md:hidden overflow-y-auto"
             >
               <div className="flex flex-col h-full p-6">
                 <div className="flex items-center justify-between mb-8">
