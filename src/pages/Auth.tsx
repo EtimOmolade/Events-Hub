@@ -6,16 +6,15 @@ import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useStore } from '@/store/useStore';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const redirect = searchParams.get('redirect') || '/';
   const navigate = useNavigate();
-  const { login } = useStore();
-  const { signIn, signUp, isAuthenticated } = useAuth();
+  const { signIn, isAuthenticated } = useAuth();
 
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
@@ -77,7 +76,7 @@ export default function Auth() {
         
         if (error) {
           if (error.message.includes('Invalid login credentials')) {
-            toast.error('Account not found. Please sign up first.');
+            toast.error('Invalid email or password. Please try again.');
           } else {
             toast.error(error.message);
           }
@@ -85,18 +84,20 @@ export default function Auth() {
           return;
         }
 
-        // Update local store
-        const user = {
-          id: 'user-1',
-          name: formData.name || formData.email.split('@')[0],
-          email: formData.email,
-        };
-        login(user);
         toast.success('Welcome back!');
         navigate(redirect);
       } else {
-        // Signup flow
-        const { error } = await signUp(formData.email, formData.password);
+        // Signup flow with full_name in metadata
+        const { data, error } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+            data: {
+              full_name: formData.name,
+            },
+          },
+        });
         
         if (error) {
           if (error.message.includes('User already registered')) {
@@ -108,8 +109,10 @@ export default function Auth() {
           return;
         }
 
-        toast.success('Account created! Please check your email to confirm your account.');
-        setIsLogin(true);
+        if (data.user) {
+          toast.success('Account created successfully!');
+          navigate(redirect);
+        }
       }
     } catch (err) {
       toast.error('An unexpected error occurred. Please try again.');
