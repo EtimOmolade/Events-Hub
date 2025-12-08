@@ -18,6 +18,9 @@ import EventBuilder from "./pages/EventBuilder";
 import SavedPlans from "./pages/SavedPlans";
 import Admin from "./pages/Admin";
 import AdminLogin from "./pages/AdminLogin";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import Account from "./pages/Account";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,6 +47,10 @@ const App = () => (
           <Route path="/saved-plans" element={<SavedPlans />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/about-us" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/account" element={<Account />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
