@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, ShoppingBag, Heart, User, Menu, X, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useStore } from '@/store/useStore';
-import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { SmartSearch } from '@/components/ui/SmartSearch';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -85,7 +84,6 @@ export function Header() {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-2">
-            <ThemeToggle />
             <Button
               variant="ghost"
               size="icon"
@@ -135,7 +133,6 @@ export function Header() {
 
           {/* Mobile Menu Button */}
           <div className="flex md:hidden items-center gap-2">
-            <ThemeToggle />
             <Link to="/cart">
               <Button variant="ghost" size="icon" className="relative">
                 <ShoppingBag className="h-5 w-5" />

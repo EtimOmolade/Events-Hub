@@ -27,11 +27,15 @@ import {
   Save,
   X,
   Sparkles,
-  ArrowLeft
+  ArrowLeft,
+  Lock,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { useTheme } from '@/hooks/useTheme';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 // Helper function to obfuscate email
 const obfuscateEmail = (email: string): string => {
@@ -91,6 +95,16 @@ export default function Account() {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [notifications, setNotifications] = useState(true);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [passwordError, setPasswordError] = useState('');
   
   const [profileData, setProfileData] = useState({
     name: '',
@@ -135,6 +149,55 @@ export default function Account() {
     logout();
     toast.success('Logged out successfully');
     navigate('/');
+  };
+
+  const handlePasswordChange = async () => {
+    setPasswordError('');
+    
+    // Validation
+    if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+      setPasswordError('All fields are required');
+      return;
+    }
+    
+    if (passwordData.newPassword.length < 6) {
+      setPasswordError('New password must be at least 6 characters');
+      return;
+    }
+    
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordError('New passwords do not match');
+      return;
+    }
+
+    try {
+      // First verify current password by attempting to sign in
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user?.email || '',
+        password: passwordData.currentPassword
+      });
+
+      if (signInError) {
+        setPasswordError('Current password is incorrect');
+        return;
+      }
+
+      // Update password
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: passwordData.newPassword
+      });
+
+      if (updateError) {
+        setPasswordError(updateError.message);
+        return;
+      }
+
+      toast.success('Password changed successfully!');
+      setIsChangingPassword(false);
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } catch (error) {
+      setPasswordError('An error occurred. Please try again.');
+    }
   };
 
   const getInitials = (name: string) => {
@@ -387,6 +450,131 @@ export default function Account() {
                           onCheckedChange={toggleTheme}
                         />
                       </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+
+                {/* Password Change */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3, duration: 0.5 }}
+                >
+                  <Card className="border-border/50 shadow-card">
+                    <CardHeader>
+                      <CardTitle className="font-display flex items-center gap-2">
+                        <Lock className="w-5 h-5 text-gold" />
+                        Security
+                      </CardTitle>
+                      <CardDescription>
+                        Manage your password
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-5">
+                      {!isChangingPassword ? (
+                        <Button
+                          variant="outline"
+                          className="w-full gap-2"
+                          onClick={() => setIsChangingPassword(true)}
+                        >
+                          <Lock className="w-4 h-4" />
+                          Change Password
+                        </Button>
+                      ) : (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          className="space-y-4"
+                        >
+                          {passwordError && (
+                            <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+                              {passwordError}
+                            </div>
+                          )}
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="currentPassword">Current Password</Label>
+                            <div className="relative">
+                              <Input
+                                id="currentPassword"
+                                type={showCurrentPassword ? 'text' : 'password'}
+                                value={passwordData.currentPassword}
+                                onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                                placeholder="Enter current password"
+                              />
+                              <button
+                                type="button"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                              >
+                                {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="newPassword">New Password</Label>
+                            <div className="relative">
+                              <Input
+                                id="newPassword"
+                                type={showNewPassword ? 'text' : 'password'}
+                                value={passwordData.newPassword}
+                                onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                                placeholder="Enter new password"
+                              />
+                              <button
+                                type="button"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                onClick={() => setShowNewPassword(!showNewPassword)}
+                              >
+                                {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                            <div className="relative">
+                              <Input
+                                id="confirmPassword"
+                                type={showConfirmPassword ? 'text' : 'password'}
+                                value={passwordData.confirmPassword}
+                                onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                                placeholder="Confirm new password"
+                              />
+                              <button
+                                type="button"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                              >
+                                {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              className="flex-1"
+                              onClick={() => {
+                                setIsChangingPassword(false);
+                                setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                                setPasswordError('');
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              variant="gold"
+                              className="flex-1 gap-2"
+                              onClick={handlePasswordChange}
+                            >
+                              <Save className="w-4 h-4" />
+                              Update Password
+                            </Button>
+                          </div>
+                        </motion.div>
+                      )}
                     </CardContent>
                   </Card>
                 </motion.div>
