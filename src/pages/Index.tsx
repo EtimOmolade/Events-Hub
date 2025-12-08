@@ -5,6 +5,7 @@ import { FeaturedServices } from '@/components/home/FeaturedServices';
 import { WhyChooseUs } from '@/components/home/WhyChooseUs';
 import { CallToAction } from '@/components/home/CallToAction';
 
+// Hello page
 const Index = () => {
   return (
     <Layout>
