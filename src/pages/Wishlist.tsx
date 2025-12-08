@@ -1,12 +1,13 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Heart } from 'lucide-react';
+import { Heart, ArrowLeft } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { ServiceCard } from '@/components/services/ServiceCard';
 import { useStore } from '@/store/useStore';
 
 export default function Wishlist() {
+  const navigate = useNavigate();
   const { wishlist } = useStore();
 
   if (wishlist.length === 0) {
@@ -39,6 +40,17 @@ export default function Wishlist() {
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
+        {/* Back Button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate(-1)}
+          className="mb-4 gap-2 text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back
+        </Button>
+        
         <h1 className="font-display text-3xl md:text-4xl font-bold mb-8">
           My <span className="text-gold">Wishlist</span>
         </h1>
