@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import confetti from 'canvas-confetti';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CalendarDays, MapPin, Users, Wallet, CreditCard, Building, Loader2, Check, Sparkles, Heart } from 'lucide-react';
@@ -92,6 +93,33 @@ export default function Checkout() {
     clearCart();
     setIsProcessing(false);
     setShowPaymentModal(true);
+    
+    // Fire confetti celebration
+    const duration = 3000;
+    const end = Date.now() + duration;
+    
+    const fireConfetti = () => {
+      confetti({
+        particleCount: 3,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0 },
+        colors: ['#D4AF37', '#FFD700', '#FFA500', '#FF6347', '#FF1493']
+      });
+      confetti({
+        particleCount: 3,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1 },
+        colors: ['#D4AF37', '#FFD700', '#FFA500', '#FF6347', '#FF1493']
+      });
+      
+      if (Date.now() < end) {
+        requestAnimationFrame(fireConfetti);
+      }
+    };
+    
+    fireConfetti();
   };
 
   const handleModalClose = () => {
