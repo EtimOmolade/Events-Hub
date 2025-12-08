@@ -1,6 +1,6 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CalendarDays, MapPin, Users, Clock, Package } from 'lucide-react';
+import { CalendarDays, MapPin, Users, Clock, Package, ArrowLeft } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +25,7 @@ const statusLabels: Record<Booking['status'], string> = {
 };
 
 export default function Bookings() {
+  const navigate = useNavigate();
   const { bookings, isAuthenticated } = useStore();
 
   if (!isAuthenticated) {
@@ -73,6 +74,17 @@ export default function Bookings() {
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
+        {/* Back Button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate(-1)}
+          className="mb-4 gap-2 text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back
+        </Button>
+        
         <h1 className="font-display text-3xl md:text-4xl font-bold mb-8">
           My <span className="text-gold">Bookings</span>
         </h1>

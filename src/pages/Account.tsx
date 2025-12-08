@@ -26,11 +26,32 @@ import {
   Edit2,
   Save,
   X,
-  Sparkles
+  Sparkles,
+  ArrowLeft
 } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { useTheme } from '@/hooks/useTheme';
 import { toast } from 'sonner';
+
+// Helper function to obfuscate email
+const obfuscateEmail = (email: string): string => {
+  if (!email || !email.includes('@')) return email;
+  const [localPart, domain] = email.split('@');
+  const visibleChars = Math.min(5, localPart.length);
+  const maskedLocal = localPart.slice(0, visibleChars) + '***';
+  return `${maskedLocal}@${domain}`;
+};
+
+// Helper function to get display name
+const getDisplayName = (user: { name?: string; email?: string } | null): string => {
+  if (!user) return 'User';
+  // If name exists and is not the same as email, use it
+  if (user.name && user.name !== user.email) {
+    return user.name;
+  }
+  // Otherwise fallback to "User"
+  return 'User';
+};
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -175,8 +196,8 @@ export default function Account() {
                     <div className="relative">
                       <Avatar className="w-24 h-24 border-4 border-background shadow-lg">
                         <AvatarImage src={user?.avatar} />
-                        <AvatarFallback className="bg-gold text-rich-black text-2xl font-display font-bold">
-                          {getInitials(user?.name || 'U')}
+                      <AvatarFallback className="bg-gold text-rich-black text-2xl font-display font-bold">
+                          {getInitials(getDisplayName(user))}
                         </AvatarFallback>
                       </Avatar>
                       <button 
@@ -190,7 +211,7 @@ export default function Account() {
                     {/* Name & Role */}
                     <div className="flex-1 pt-4 sm:pt-0">
                       <div className="flex items-center gap-3 mb-1">
-                        <h1 className="font-display text-2xl font-bold">{user?.name || 'User'}</h1>
+                        <h1 className="font-display text-2xl font-bold">{getDisplayName(user)}</h1>
                         {isAdminAuthenticated && (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gold/10 text-gold text-xs font-medium">
                             <Shield className="w-3 h-3" />
@@ -198,7 +219,7 @@ export default function Account() {
                           </span>
                         )}
                       </div>
-                      <p className="text-muted-foreground text-sm">{user?.email}</p>
+                      <p className="text-muted-foreground text-sm">{obfuscateEmail(user?.email || '')}</p>
                     </div>
                     
                     {/* Edit Button */}

@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { Calendar, Trash2, Eye, ShoppingBag, Sparkles } from 'lucide-react';
+import { Calendar, Trash2, Eye, ShoppingBag, Sparkles, ArrowLeft } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { useStore } from '@/store/useStore';
@@ -75,6 +75,17 @@ export default function SavedPlans() {
     <Layout>
       <div className="min-h-screen py-8">
         <div className="container mx-auto px-4">
+          {/* Back Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(-1)}
+            className="mb-4 gap-2 text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </Button>
+          
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
