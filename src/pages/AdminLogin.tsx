@@ -1,38 +1,72 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Shield, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { Shield, Eye, EyeOff, ArrowLeft, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { useStore } from '@/store/useStore';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { toast } from 'sonner';
+import { z } from 'zod';
+
+const loginSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+});
 
 export default function AdminLogin() {
   const navigate = useNavigate();
-  const { adminLogin } = useStore();
+  const { isAdmin, isLoading: authLoading, signIn } = useAdminAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+
+  useEffect(() => {
+    if (!authLoading && isAdmin) {
+      navigate('/admin');
+    }
+  }, [isAdmin, authLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrors({});
+
+    // Validate inputs
+    const result = loginSchema.safeParse({ email, password });
+    if (!result.success) {
+      const fieldErrors: { email?: string; password?: string } = {};
+      result.error.errors.forEach((err) => {
+        if (err.path[0] === 'email') fieldErrors.email = err.message;
+        if (err.path[0] === 'password') fieldErrors.password = err.message;
+      });
+      setErrors(fieldErrors);
+      return;
+    }
+
     setIsLoading(true);
 
-    // Mock admin authentication - in production, this would verify against backend
-    // Demo credentials for testing
-    if (email === 'admin@eventshub.com' && password === 'admin123') {
-      adminLogin();
+    const { error } = await signIn(email, password);
+    
+    if (error) {
+      toast.error(error.message || 'Invalid credentials');
+    } else {
       toast.success('Welcome back, Admin!');
       navigate('/admin');
-    } else {
-      toast.error('Invalid credentials. Use admin@eventshub.com / admin123');
     }
     
     setIsLoading(false);
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-gold" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -72,8 +106,12 @@ export default function AdminLogin() {
                   placeholder="admin@eventshub.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  className={errors.email ? 'border-destructive' : ''}
                   required
                 />
+                {errors.email && (
+                  <p className="text-sm text-destructive">{errors.email}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
@@ -84,6 +122,7 @@ export default function AdminLogin() {
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    className={errors.password ? 'border-destructive' : ''}
                     required
                   />
                   <button
@@ -94,6 +133,9 @@ export default function AdminLogin() {
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
+                {errors.password && (
+                  <p className="text-sm text-destructive">{errors.password}</p>
+                )}
               </div>
               <Button 
                 type="submit" 
@@ -101,14 +143,22 @@ export default function AdminLogin() {
                 className="w-full"
                 disabled={isLoading}
               >
-                {isLoading ? 'Signing in...' : 'Sign In'}
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  'Sign In'
+                )}
               </Button>
             </form>
 
-            <div className="mt-6 p-4 rounded-lg bg-muted/50 text-sm text-muted-foreground">
-              <p className="font-medium mb-1">Demo Credentials:</p>
-              <p>Email: admin@eventshub.com</p>
-              <p>Password: admin123</p>
+            <div className="mt-6 text-center text-sm text-muted-foreground">
+              <p>Admin access only. Regular users should use the main sign in.</p>
+              <Link to="/auth" className="text-gold hover:underline mt-2 inline-block">
+                Go to regular sign in
+              </Link>
             </div>
           </CardContent>
         </Card>

@@ -1,17 +1,35 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, ShoppingBag, Heart, User, Menu, X } from 'lucide-react';
+import { Search, ShoppingBag, Heart, User, Menu, X, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useStore } from '@/store/useStore';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { SmartSearch } from '@/components/ui/SmartSearch';
+import { supabase } from '@/integrations/supabase/client';
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
   const { cart, wishlist, isAuthenticated } = useStore();
+
+  useEffect(() => {
+    const checkAdminRole = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .eq('role', 'admin')
+          .maybeSingle();
+        setIsAdmin(!!data);
+      }
+    };
+    checkAdminRole();
+  }, []);
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -46,6 +64,11 @@ export function Header() {
             <Link to="/vendors" className="text-foreground/80 hover:text-gold transition-colors">
               Vendors
             </Link>
+            {isAdmin && (
+              <Link to="/admin" className="text-gold hover:text-gold-light transition-colors flex items-center gap-1">
+                <Shield className="h-4 w-4" /> Admin
+              </Link>
+            )}
           </nav>
 
           {/* Desktop Actions */}

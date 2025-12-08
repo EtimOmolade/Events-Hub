@@ -1,0 +1,522 @@
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Plus, Edit2, Trash2, Search, Loader2, MoreVertical, Eye, EyeOff } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { AdminLayout } from '@/components/admin/AdminLayout';
+import { AdminProtectedRoute } from '@/components/admin/AdminProtectedRoute';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
+interface Service {
+  id: string;
+  name: string;
+  category_id: string | null;
+  description: string | null;
+  short_description: string | null;
+  price: number;
+  price_type: string;
+  rating: number;
+  review_count: number;
+  images: string[] | null;
+  vendor_id: string | null;
+  location: string | null;
+  features: string[] | null;
+  available: boolean;
+  created_at: string;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+interface Vendor {
+  id: string;
+  name: string;
+}
+
+export default function AdminServices() {
+  const [services, setServices] = useState<Service[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingService, setEditingService] = useState<Service | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Form state
+  const [formData, setFormData] = useState({
+    name: '',
+    category_id: '',
+    vendor_id: '',
+    description: '',
+    short_description: '',
+    price: '',
+    price_type: 'fixed',
+    location: '',
+    features: '',
+    images: '',
+    available: true,
+  });
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      const [servicesRes, categoriesRes, vendorsRes] = await Promise.all([
+        supabase.from('services').select('*').order('created_at', { ascending: false }),
+        supabase.from('categories').select('id, name, slug'),
+        supabase.from('vendors').select('id, name'),
+      ]);
+
+      if (servicesRes.data) setServices(servicesRes.data);
+      if (categoriesRes.data) setCategories(categoriesRes.data);
+      if (vendorsRes.data) setVendors(vendorsRes.data);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast.error('Failed to load services');
+    }
+    setIsLoading(false);
+  };
+
+  const openCreateDialog = () => {
+    setEditingService(null);
+    setFormData({
+      name: '',
+      category_id: '',
+      vendor_id: '',
+      description: '',
+      short_description: '',
+      price: '',
+      price_type: 'fixed',
+      location: '',
+      features: '',
+      images: '',
+      available: true,
+    });
+    setIsDialogOpen(true);
+  };
+
+  const openEditDialog = (service: Service) => {
+    setEditingService(service);
+    setFormData({
+      name: service.name,
+      category_id: service.category_id || '',
+      vendor_id: service.vendor_id || '',
+      description: service.description || '',
+      short_description: service.short_description || '',
+      price: service.price.toString(),
+      price_type: service.price_type,
+      location: service.location || '',
+      features: service.features?.join(', ') || '',
+      images: service.images?.join(', ') || '',
+      available: service.available,
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+
+    const serviceData = {
+      name: formData.name,
+      category_id: formData.category_id || null,
+      vendor_id: formData.vendor_id || null,
+      description: formData.description,
+      short_description: formData.short_description,
+      price: parseFloat(formData.price),
+      price_type: formData.price_type,
+      location: formData.location,
+      features: formData.features.split(',').map(f => f.trim()).filter(Boolean),
+      images: formData.images.split(',').map(i => i.trim()).filter(Boolean),
+      available: formData.available,
+    };
+
+    try {
+      if (editingService) {
+        const { error } = await supabase
+          .from('services')
+          .update(serviceData)
+          .eq('id', editingService.id);
+
+        if (error) throw error;
+        toast.success('Service updated successfully');
+      } else {
+        const { error } = await supabase
+          .from('services')
+          .insert([serviceData]);
+
+        if (error) throw error;
+        toast.success('Service created successfully');
+      }
+
+      setIsDialogOpen(false);
+      fetchData();
+    } catch (error: any) {
+      console.error('Error saving service:', error);
+      toast.error(error.message || 'Failed to save service');
+    }
+    setIsSaving(false);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this service?')) return;
+
+    try {
+      const { error } = await supabase.from('services').delete().eq('id', id);
+      if (error) throw error;
+      toast.success('Service deleted successfully');
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete service');
+    }
+  };
+
+  const toggleAvailability = async (service: Service) => {
+    try {
+      const { error } = await supabase
+        .from('services')
+        .update({ available: !service.available })
+        .eq('id', service.id);
+
+      if (error) throw error;
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update availability');
+    }
+  };
+
+  const filteredServices = services.filter(s =>
+    s.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const getCategoryName = (categoryId: string | null) => {
+    if (!categoryId) return 'Uncategorized';
+    return categories.find(c => c.id === categoryId)?.name || 'Unknown';
+  };
+
+  const getVendorName = (vendorId: string | null) => {
+    if (!vendorId) return 'No vendor';
+    return vendors.find(v => v.id === vendorId)?.name || 'Unknown';
+  };
+
+  return (
+    <AdminProtectedRoute>
+      <AdminLayout>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-6"
+        >
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="font-display text-3xl font-bold">Services</h1>
+              <p className="text-muted-foreground">Manage event services</p>
+            </div>
+            <Button variant="gold" onClick={openCreateDialog}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Service
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search services..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-gold" />
+            </div>
+          ) : (
+            <Card>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left p-4 font-medium">Service</th>
+                      <th className="text-left p-4 font-medium">Category</th>
+                      <th className="text-left p-4 font-medium">Vendor</th>
+                      <th className="text-left p-4 font-medium">Price</th>
+                      <th className="text-left p-4 font-medium">Status</th>
+                      <th className="text-left p-4 font-medium">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredServices.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                          No services found. Create your first service to get started.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredServices.map((service) => (
+                        <tr key={service.id} className="border-b border-border">
+                          <td className="p-4">
+                            <div>
+                              <p className="font-medium">{service.name}</p>
+                              <p className="text-sm text-muted-foreground line-clamp-1">
+                                {service.short_description}
+                              </p>
+                            </div>
+                          </td>
+                          <td className="p-4">{getCategoryName(service.category_id)}</td>
+                          <td className="p-4">{getVendorName(service.vendor_id)}</td>
+                          <td className="p-4">
+                            ₦{service.price.toLocaleString()}
+                            <span className="text-xs text-muted-foreground ml-1">
+                              ({service.price_type})
+                            </span>
+                          </td>
+                          <td className="p-4">
+                            <Badge variant={service.available ? 'default' : 'secondary'}>
+                              {service.available ? 'Available' : 'Unavailable'}
+                            </Badge>
+                          </td>
+                          <td className="p-4">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => openEditDialog(service)}>
+                                  <Edit2 className="h-4 w-4 mr-2" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => toggleAvailability(service)}>
+                                  {service.available ? (
+                                    <>
+                                      <EyeOff className="h-4 w-4 mr-2" />
+                                      Make Unavailable
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Eye className="h-4 w-4 mr-2" />
+                                      Make Available
+                                    </>
+                                  )}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => handleDelete(service.id)}
+                                  className="text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          )}
+
+          {/* Create/Edit Dialog */}
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingService ? 'Edit Service' : 'Create Service'}
+                </DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Name *</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="category">Category</Label>
+                    <Select
+                      value={formData.category_id}
+                      onValueChange={(value) => setFormData({ ...formData, category_id: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="vendor">Vendor</Label>
+                    <Select
+                      value={formData.vendor_id}
+                      onValueChange={(value) => setFormData({ ...formData, vendor_id: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select vendor" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {vendors.map((v) => (
+                          <SelectItem key={v.id} value={v.id}>
+                            {v.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="location">Location</Label>
+                    <Input
+                      id="location"
+                      value={formData.location}
+                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="short_description">Short Description</Label>
+                  <Input
+                    id="short_description"
+                    value={formData.short_description}
+                    onChange={(e) => setFormData({ ...formData, short_description: e.target.value })}
+                    maxLength={160}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">Full Description</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    rows={4}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="price">Price (₦) *</Label>
+                    <Input
+                      id="price"
+                      type="number"
+                      value={formData.price}
+                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                      required
+                      min="0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="price_type">Price Type</Label>
+                    <Select
+                      value={formData.price_type}
+                      onValueChange={(value) => setFormData({ ...formData, price_type: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="fixed">Fixed</SelectItem>
+                        <SelectItem value="starting">Starting From</SelectItem>
+                        <SelectItem value="hourly">Hourly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="features">Features (comma-separated)</Label>
+                  <Input
+                    id="features"
+                    value={formData.features}
+                    onChange={(e) => setFormData({ ...formData, features: e.target.value })}
+                    placeholder="Feature 1, Feature 2, Feature 3"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="images">Image URLs (comma-separated)</Label>
+                  <Textarea
+                    id="images"
+                    value={formData.images}
+                    onChange={(e) => setFormData({ ...formData, images: e.target.value })}
+                    placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
+                    rows={2}
+                  />
+                </div>
+
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" variant="gold" disabled={isSaving}>
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : editingService ? (
+                      'Update Service'
+                    ) : (
+                      'Create Service'
+                    )}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </motion.div>
+      </AdminLayout>
+    </AdminProtectedRoute>
+  );
+}

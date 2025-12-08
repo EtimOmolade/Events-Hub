@@ -16,8 +16,10 @@ import Vendors from "./pages/Vendors";
 import VendorDetail from "./pages/VendorDetail";
 import EventBuilder from "./pages/EventBuilder";
 import SavedPlans from "./pages/SavedPlans";
-import Admin from "./pages/Admin";
 import AdminLogin from "./pages/AdminLogin";
+import AdminServices from "./pages/admin/AdminServices";
+import AdminVendors from "./pages/admin/AdminVendors";
+import AdminCategories from "./pages/admin/AdminCategories";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Account from "./pages/Account";
@@ -45,8 +47,11 @@ const App = () => (
           <Route path="/vendor/:id" element={<VendorDetail />} />
           <Route path="/event-builder" element={<EventBuilder />} />
           <Route path="/saved-plans" element={<SavedPlans />} />
-          <Route path="/admin" element={<Admin />} />
+          <Route path="/admin" element={<AdminServices />} />
           <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/services" element={<AdminServices />} />
+          <Route path="/admin/vendors" element={<AdminVendors />} />
+          <Route path="/admin/categories" element={<AdminCategories />} />
           <Route path="/about" element={<About />} />
           <Route path="/about-us" element={<About />} />
           <Route path="/contact" element={<Contact />} />

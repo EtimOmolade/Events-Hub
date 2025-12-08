@@ -14,16 +14,189 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      services: {
+        Row: {
+          available: boolean | null
+          category_id: string | null
+          created_at: string
+          description: string | null
+          features: string[] | null
+          id: string
+          images: string[] | null
+          location: string | null
+          name: string
+          price: number
+          price_type: string | null
+          rating: number | null
+          review_count: number | null
+          short_description: string | null
+          updated_at: string
+          vendor_id: string | null
+        }
+        Insert: {
+          available?: boolean | null
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
+          features?: string[] | null
+          id?: string
+          images?: string[] | null
+          location?: string | null
+          name: string
+          price: number
+          price_type?: string | null
+          rating?: number | null
+          review_count?: number | null
+          short_description?: string | null
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Update: {
+          available?: boolean | null
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
+          features?: string[] | null
+          id?: string
+          images?: string[] | null
+          location?: string | null
+          name?: string
+          price?: number
+          price_type?: string | null
+          rating?: number | null
+          review_count?: number | null
+          short_description?: string | null
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "services_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "services_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      vendors: {
+        Row: {
+          active: boolean | null
+          avatar: string | null
+          bio: string | null
+          created_at: string
+          id: string
+          location: string | null
+          name: string
+          rating: number | null
+          review_count: number | null
+          specialty: string | null
+          updated_at: string
+          verified: boolean | null
+        }
+        Insert: {
+          active?: boolean | null
+          avatar?: string | null
+          bio?: string | null
+          created_at?: string
+          id?: string
+          location?: string | null
+          name: string
+          rating?: number | null
+          review_count?: number | null
+          specialty?: string | null
+          updated_at?: string
+          verified?: boolean | null
+        }
+        Update: {
+          active?: boolean | null
+          avatar?: string | null
+          bio?: string | null
+          created_at?: string
+          id?: string
+          location?: string | null
+          name?: string
+          rating?: number | null
+          review_count?: number | null
+          specialty?: string | null
+          updated_at?: string
+          verified?: boolean | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +323,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
