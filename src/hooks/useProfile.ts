@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
 export interface Profile {
@@ -19,54 +18,35 @@ export function useProfile() {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      fetchProfile(user.id);
+      // Create a basic profile from auth user data
+      setProfile({
+        id: user.id,
+        full_name: user.user_metadata?.full_name || null,
+        email: user.email || null,
+        avatar_url: user.user_metadata?.avatar_url || null,
+        phone: user.phone || null,
+        created_at: user.created_at,
+        updated_at: new Date().toISOString(),
+      });
+      setIsLoading(false);
     } else {
       setProfile(null);
       setIsLoading(false);
     }
   }, [isAuthenticated, user]);
 
-  const fetchProfile = async (userId: string) => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error fetching profile:', error);
-      } else {
-        setProfile(data);
-      }
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-    }
-    setIsLoading(false);
-  };
-
   const updateProfile = async (updates: Partial<Profile>) => {
     if (!user) return { error: { message: 'Not authenticated' } };
-
-    const { data, error } = await supabase
-      .from('profiles')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', user.id)
-      .select()
-      .single();
-
-    if (!error && data) {
-      setProfile(data);
-    }
-
-    return { data, error };
+    
+    // For now, just update local state
+    setProfile(prev => prev ? { ...prev, ...updates } : null);
+    return { data: profile, error: null };
   };
 
   return {
     profile,
     isLoading,
     updateProfile,
-    refetch: () => user && fetchProfile(user.id),
+    refetch: () => {},
   };
 }

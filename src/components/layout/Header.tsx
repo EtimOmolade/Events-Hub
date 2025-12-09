@@ -1,16 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, ShoppingBag, Heart, User, Menu, X, Shield } from 'lucide-react';
+import { Search, ShoppingBag, Heart, User, Menu, X, Shield, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useStore } from '@/store/useStore';
 import { SmartSearch } from '@/components/ui/SmartSearch';
-import { supabase } from '@/integrations/supabase/client';
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
   const { cart, wishlist, isAuthenticated } = useStore();
 
@@ -25,22 +23,6 @@ export function Header() {
       document.body.style.overflow = '';
     };
   }, [isMenuOpen]);
-
-  useEffect(() => {
-    const checkAdminRole = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        const { data } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', session.user.id)
-          .eq('role', 'admin')
-          .maybeSingle();
-        setIsAdmin(!!data);
-      }
-    };
-    checkAdminRole();
-  }, []);
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -66,20 +48,15 @@ export function Header() {
             <Link to="/services" className="text-foreground/80 hover:text-gold transition-colors">
               Services
             </Link>
-            <Link to="/event-builder" className="text-foreground/80 hover:text-gold transition-colors flex items-center gap-1">
-              <span className="text-gold">✨</span> Event Builder
+            <Link to="/ai-planner" className="text-gold hover:text-gold-light transition-colors flex items-center gap-1 font-medium">
+              <Sparkles className="h-4 w-4" /> AI Planner
             </Link>
-            <Link to="/categories" className="text-foreground/80 hover:text-gold transition-colors">
-              Categories
+            <Link to="/event-builder" className="text-foreground/80 hover:text-gold transition-colors">
+              Event Builder
             </Link>
             <Link to="/vendors" className="text-foreground/80 hover:text-gold transition-colors">
               Vendors
             </Link>
-            {isAdmin && (
-              <Link to="/admin" className="text-gold hover:text-gold-light transition-colors flex items-center gap-1">
-                <Shield className="h-4 w-4" /> Admin
-              </Link>
-            )}
           </nav>
 
           {/* Desktop Actions */}
@@ -202,8 +179,9 @@ export function Header() {
                 <nav className="flex flex-col gap-2 flex-1">
                   {[
                     { to: '/', label: 'Home' },
+                    { to: '/ai-planner', label: '✨ AI Planner', highlight: true },
                     { to: '/services', label: 'Services' },
-                    { to: '/event-builder', label: '✨ Event Builder' },
+                    { to: '/event-builder', label: 'Event Builder' },
                     { to: '/categories', label: 'Categories' },
                     { to: '/vendors', label: 'Vendors' },
                     { to: '/wishlist', label: 'Wishlist' },
@@ -214,7 +192,9 @@ export function Header() {
                       key={item.to}
                       to={item.to}
                       onClick={() => setIsMenuOpen(false)}
-                      className="text-lg font-medium py-3 px-4 rounded-lg hover:bg-muted hover:text-gold transition-colors"
+                      className={`text-lg font-medium py-3 px-4 rounded-lg hover:bg-muted transition-colors ${
+                        item.highlight ? 'text-gold hover:bg-gold/10' : 'hover:text-gold'
+                      }`}
                     >
                       {item.label}
                     </Link>
