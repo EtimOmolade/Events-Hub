@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { useTheme } from '@/hooks/useTheme';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -46,12 +47,12 @@ const obfuscateEmail = (email: string): string => {
   return `${maskedLocal}@${domain}`;
 };
 
-// Helper function to get display name
-const getDisplayName = (user: { name?: string; email?: string } | null): string => {
+// Helper function to get display name from Supabase user
+const getDisplayName = (user: { user_metadata?: { full_name?: string }; email?: string } | null): string => {
   if (!user) return 'User';
-  // If name exists and is not the same as email, use it
-  if (user.name && user.name !== user.email) {
-    return user.name;
+  // Check user_metadata for full_name
+  if (user.user_metadata?.full_name) {
+    return user.user_metadata.full_name;
   }
   // Otherwise fallback to "User"
   return 'User';
@@ -89,7 +90,8 @@ const quickLinks = [
 
 export default function Account() {
   const navigate = useNavigate();
-  const { user, isAuthenticated, isAdminAuthenticated, logout } = useStore();
+  const { isAdminAuthenticated } = useStore();
+  const { user, isAuthenticated, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
   
   const [isEditing, setIsEditing] = useState(false);
@@ -117,9 +119,9 @@ export default function Account() {
     const timer = setTimeout(() => {
       if (user) {
         setProfileData({
-          name: user.name || '',
+          name: user.user_metadata?.full_name || '',
           email: user.email || '',
-          phone: ''
+          phone: user.user_metadata?.phone || ''
         });
       }
       setIsLoading(false);
@@ -145,8 +147,8 @@ export default function Account() {
     setIsEditing(false);
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await signOut();
     toast.success('Logged out successfully');
     navigate('/');
   };
@@ -258,7 +260,7 @@ export default function Account() {
                     {/* Avatar */}
                     <div className="relative">
                       <Avatar className="w-24 h-24 border-4 border-background shadow-lg">
-                        <AvatarImage src={user?.avatar} />
+                        <AvatarImage src={user?.user_metadata?.avatar_url} />
                       <AvatarFallback className="bg-gold text-rich-black text-2xl font-display font-bold">
                           {getInitials(getDisplayName(user))}
                         </AvatarFallback>
