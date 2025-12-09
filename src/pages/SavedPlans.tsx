@@ -1,24 +1,85 @@
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { Calendar, Trash2, Eye, ShoppingBag, Sparkles, ArrowLeft } from 'lucide-react';
+import { Calendar, Trash2, Eye, MessageSquare, Sparkles, ArrowLeft, Loader2 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
-import { useStore } from '@/store/useStore';
-import { 
-  eventTypeCategories, 
-  eventThemes, 
-  colorPalettes,
-  guestSizeRanges,
-  venueTypes,
-  budgetRanges,
-  formatPrice,
-} from '@/data/eventBuilder';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { AIChatMessage } from '@/components/ai/AIChatMessage';
+
+interface EventPlan {
+  id: string;
+  name: string;
+  event_type: string | null;
+  theme: string | null;
+  guest_count: number | null;
+  budget: number | null;
+  event_date: string | null;
+  notes: string | null;
+  ai_conversation: Array<{ role: 'user' | 'assistant'; content: string }> | null;
+  created_at: string | null;
+}
 
 export default function SavedPlans() {
   const navigate = useNavigate();
-  const { savedPlans, removeSavedPlan, addToCart, isAuthenticated } = useStore();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const [plans, setPlans] = useState<EventPlan[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedPlan, setSelectedPlan] = useState<EventPlan | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      fetchPlans();
+    }
+  }, [user]);
+
+  const fetchPlans = async () => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    const { data, error } = await supabase
+      .from('event_plans')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching plans:', error);
+      toast.error('Failed to load saved plans');
+    } else {
+      setPlans((data || []) as unknown as EventPlan[]);
+    }
+    setIsLoading(false);
+  };
+
+  const handleRemovePlan = async (planId: string) => {
+    const { error } = await supabase
+      .from('event_plans')
+      .delete()
+      .eq('id', planId);
+
+    if (error) {
+      toast.error('Failed to delete plan');
+    } else {
+      setPlans(plans.filter(p => p.id !== planId));
+      toast.success('Plan removed');
+    }
+  };
+
+  if (authLoading) {
+    return (
+      <Layout>
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-gold" />
+        </div>
+      </Layout>
+    );
+  }
 
   if (!isAuthenticated) {
     return (
@@ -45,32 +106,6 @@ export default function SavedPlans() {
     );
   }
 
-  const handleRemovePlan = (planId: string) => {
-    removeSavedPlan(planId);
-    toast.success('Plan removed');
-  };
-
-  const handleAddPackageToCart = (plan: typeof savedPlans[0]) => {
-    if (plan.packages.length > 0) {
-      const pkg = plan.packages[0]; // Add the first (essential) package
-      pkg.services.forEach((service) => {
-        addToCart(service, 1);
-      });
-      toast.success('Package added to cart!');
-    }
-  };
-
-  const getPlanDetails = (plan: typeof savedPlans[0]) => {
-    const eventInfo = eventTypeCategories.find((e) => e.id === plan.eventType);
-    const themeInfo = eventThemes.find((t) => t.id === plan.theme);
-    const paletteInfo = colorPalettes.find((p) => p.id === plan.colorPalette);
-    const guestInfo = guestSizeRanges.find((g) => g.id === plan.guestSize);
-    const venueInfo = venueTypes.find((v) => v.id === plan.venueType);
-    const budgetInfo = budgetRanges.find((b) => b.id === plan.budget);
-
-    return { eventInfo, themeInfo, paletteInfo, guestInfo, venueInfo, budgetInfo };
-  };
-
   return (
     <Layout>
       <div className="min-h-screen py-8">
@@ -96,11 +131,15 @@ export default function SavedPlans() {
               Saved Event Plans
             </h1>
             <p className="text-muted-foreground">
-              Your saved event configurations and package recommendations
+              Your saved event configurations and AI conversations
             </p>
           </motion.div>
 
-          {savedPlans.length === 0 ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="w-8 h-8 animate-spin text-gold" />
+            </div>
+          ) : plans.length === 0 ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -111,22 +150,26 @@ export default function SavedPlans() {
                 No saved plans yet
               </h2>
               <p className="text-muted-foreground mb-6">
-                Use our Event Builder to create and save custom event plans
+                Use our AI Planner or Event Builder to create and save plans
               </p>
-              <Link to="/event-builder">
-                <Button variant="gold" className="gap-2">
-                  <Sparkles className="w-4 h-4" />
-                  Create Event Plan
-                </Button>
-              </Link>
+              <div className="flex gap-3 justify-center">
+                <Link to="/ai-planner">
+                  <Button variant="gold" className="gap-2">
+                    <Sparkles className="w-4 h-4" />
+                    AI Planner
+                  </Button>
+                </Link>
+                <Link to="/event-builder">
+                  <Button variant="outline" className="gap-2">
+                    Event Builder
+                  </Button>
+                </Link>
+              </div>
             </motion.div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {savedPlans.map((plan, index) => {
-                const { eventInfo, themeInfo, paletteInfo, guestInfo, venueInfo, budgetInfo } = getPlanDetails(plan);
-                const cheapestPackage = plan.packages.reduce((min, pkg) => 
-                  pkg.totalPrice < min.totalPrice ? pkg : min
-                , plan.packages[0]);
+              {plans.map((plan, index) => {
+                const hasConversation = plan.ai_conversation && plan.ai_conversation.length > 0;
 
                 return (
                   <motion.div
@@ -140,13 +183,18 @@ export default function SavedPlans() {
                     <div className="p-6 border-b border-border bg-gradient-to-r from-gold/10 to-transparent">
                       <div className="flex items-start justify-between">
                         <div>
-                          <span className="text-3xl mb-2 block">{eventInfo?.icon}</span>
+                          {hasConversation && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gold/20 text-gold text-xs rounded-full mb-2">
+                              <MessageSquare className="w-3 h-3" />
+                              AI Conversation
+                            </span>
+                          )}
                           <h3 className="font-display text-xl font-semibold mb-1">
                             {plan.name}
                           </h3>
                           <p className="text-sm text-muted-foreground flex items-center gap-1">
                             <Calendar className="w-4 h-4" />
-                            Created {format(new Date(plan.createdAt), 'MMM d, yyyy')}
+                            Created {plan.created_at ? format(new Date(plan.created_at), 'MMM d, yyyy') : 'Unknown'}
                           </p>
                         </div>
                         <Button
@@ -163,55 +211,51 @@ export default function SavedPlans() {
                     {/* Details */}
                     <div className="p-6 space-y-4">
                       <div className="flex flex-wrap gap-2">
-                        {[
-                          { icon: themeInfo?.icon, label: themeInfo?.name },
-                          { icon: '🎨', label: paletteInfo?.name },
-                          { icon: '👥', label: guestInfo?.range },
-                          { icon: venueInfo?.icon, label: venueInfo?.name },
-                          { icon: '💰', label: budgetInfo?.range },
-                        ].map((item, i) => (
-                          <span
-                            key={i}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-muted rounded-full text-xs"
-                          >
-                            <span>{item.icon}</span>
-                            <span className="text-muted-foreground">{item.label}</span>
+                        {plan.event_type && (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-muted rounded-full text-xs">
+                            <span>🎉</span>
+                            <span className="text-muted-foreground">{plan.event_type}</span>
                           </span>
-                        ))}
-                      </div>
-
-                      {/* Packages Summary */}
-                      <div className="bg-muted/50 rounded-lg p-4">
-                        <p className="text-sm text-muted-foreground mb-2">
-                          {plan.packages.length} packages generated
-                        </p>
-                        {cheapestPackage && (
-                          <p className="text-sm">
-                            Starting from{' '}
-                            <span className="font-semibold text-gold">
-                              {formatPrice(cheapestPackage.totalPrice)}
-                            </span>
-                          </p>
+                        )}
+                        {plan.theme && (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-muted rounded-full text-xs">
+                            <span>🎨</span>
+                            <span className="text-muted-foreground">{plan.theme}</span>
+                          </span>
+                        )}
+                        {plan.guest_count && (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-muted rounded-full text-xs">
+                            <span>👥</span>
+                            <span className="text-muted-foreground">{plan.guest_count} guests</span>
+                          </span>
                         )}
                       </div>
 
+                      {plan.notes && (
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {plan.notes}
+                        </p>
+                      )}
+
                       {/* Actions */}
                       <div className="flex gap-3">
-                        <Button
-                          variant="outline"
-                          className="flex-1 gap-2"
-                          onClick={() => navigate('/event-builder')}
-                        >
-                          <Eye className="w-4 h-4" />
-                          View Details
-                        </Button>
+                        {hasConversation && (
+                          <Button
+                            variant="outline"
+                            className="flex-1 gap-2"
+                            onClick={() => setSelectedPlan(plan)}
+                          >
+                            <Eye className="w-4 h-4" />
+                            View Conversation
+                          </Button>
+                        )}
                         <Button
                           variant="gold"
                           className="flex-1 gap-2"
-                          onClick={() => handleAddPackageToCart(plan)}
+                          onClick={() => navigate('/ai-planner')}
                         >
-                          <ShoppingBag className="w-4 h-4" />
-                          Add to Cart
+                          <Sparkles className="w-4 h-4" />
+                          Continue Planning
                         </Button>
                       </div>
                     </div>
@@ -222,6 +266,23 @@ export default function SavedPlans() {
           )}
         </div>
       </div>
+
+      {/* Conversation Dialog */}
+      <Dialog open={!!selectedPlan} onOpenChange={() => setSelectedPlan(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-gold" />
+              {selectedPlan?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[60vh] pr-4">
+            {selectedPlan?.ai_conversation?.map((msg, i) => (
+              <AIChatMessage key={i} role={msg.role} content={msg.content} />
+            ))}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }

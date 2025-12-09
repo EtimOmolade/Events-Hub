@@ -190,6 +190,7 @@ export type Database = {
       }
       event_plans: {
         Row: {
+          ai_conversation: Json | null
           budget: number | null
           created_at: string | null
           event_date: string | null
@@ -205,6 +206,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          ai_conversation?: Json | null
           budget?: number | null
           created_at?: string | null
           event_date?: string | null
@@ -220,6 +222,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          ai_conversation?: Json | null
           budget?: number | null
           created_at?: string | null
           event_date?: string | null

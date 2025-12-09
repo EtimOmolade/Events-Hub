@@ -1,6 +1,6 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Trash2, Save, ArrowLeft, Wand2 } from 'lucide-react';
+import { Sparkles, Trash2, Save, ArrowLeft, Wand2, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,9 @@ import { AIChatMessage } from '@/components/ai/AIChatMessage';
 import { AIChatInput } from '@/components/ai/AIChatInput';
 import { useStore } from '@/store/useStore';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { parseAIRecommendations, hasValidRecommendation } from '@/utils/aiParser';
+import { supabase } from '@/integrations/supabase/client';
 
 const quickPrompts = [
   "Help me plan a 200-guest wedding with gold and white theme",
@@ -24,9 +26,11 @@ const quickPrompts = [
 export default function AIPlanner() {
   const navigate = useNavigate();
   const { messages, isLoading, error, sendMessage, clearChat } = useAIChat();
-  const { isAuthenticated, setAIRecommendation } = useStore();
+  const { setAIRecommendation } = useStore();
+  const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Parse recommendations from the latest assistant message
   const latestAssistantMessage = [...messages].reverse().find(m => m.role === 'assistant');
@@ -41,8 +45,8 @@ export default function AIPlanner() {
     }
   }, [messages]);
 
-  const handleSavePlan = () => {
-    if (!isAuthenticated) {
+  const handleSavePlan = async () => {
+    if (!isAuthenticated || !user) {
       toast({
         title: "Sign in required",
         description: "Please sign in to save your event plans.",
@@ -60,11 +64,39 @@ export default function AIPlanner() {
       return;
     }
 
-    // For now, show success - database saving would go here
-    toast({
-      title: "Plan saved!",
-      description: "Your event plan has been saved to your account.",
-    });
+    setIsSaving(true);
+    try {
+      // Extract event details from the conversation
+      const eventType = parsedRecommendation?.eventType || 'General Event';
+      const theme = parsedRecommendation?.theme;
+      const guestSize = parsedRecommendation?.guestSize;
+      const budgetRange = parsedRecommendation?.budget;
+
+      const { error: saveError } = await supabase.from('event_plans').insert([{
+        user_id: user.id,
+        name: `AI Plan - ${eventType}`,
+        event_type: eventType,
+        theme: theme,
+        notes: `Guest size: ${guestSize || 'Not specified'}, Budget: ${budgetRange || 'Not specified'}. Created via AI Planner on ${new Date().toLocaleDateString()}`,
+        ai_conversation: messages as any,
+      }]);
+
+      if (saveError) throw saveError;
+
+      toast({
+        title: "Plan saved!",
+        description: "Your AI conversation has been saved to your account.",
+      });
+    } catch (err) {
+      console.error('Save error:', err);
+      toast({
+        title: "Failed to save",
+        description: "There was an error saving your plan. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleAutoFill = () => {
@@ -117,9 +149,9 @@ export default function AIPlanner() {
                   <Trash2 className="w-4 h-4 mr-2" />
                   Clear
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleSavePlan}>
-                  <Save className="w-4 h-4 mr-2" />
-                  Save Plan
+                <Button variant="outline" size="sm" onClick={handleSavePlan} disabled={isSaving || messages.length === 0}>
+                  {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                  {isSaving ? 'Saving...' : 'Save Plan'}
                 </Button>
                 {canAutoFill && (
                   <Button variant="gold" size="sm" onClick={handleAutoFill}>
