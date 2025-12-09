@@ -16,33 +16,40 @@ export type Database = {
     Tables: {
       availability: {
         Row: {
-          created_at: string
+          booking_id: string | null
+          created_at: string | null
           date: string
           event_type: string | null
           id: string
-          metadata: Json | null
-          status: Database["public"]["Enums"]["availability_status"] | null
+          status: string | null
           vendor_id: string
         }
         Insert: {
-          created_at?: string
+          booking_id?: string | null
+          created_at?: string | null
           date: string
           event_type?: string | null
           id?: string
-          metadata?: Json | null
-          status?: Database["public"]["Enums"]["availability_status"] | null
+          status?: string | null
           vendor_id: string
         }
         Update: {
-          created_at?: string
+          booking_id?: string | null
+          created_at?: string | null
           date?: string
           event_type?: string | null
           id?: string
-          metadata?: Json | null
-          status?: Database["public"]["Enums"]["availability_status"] | null
+          status?: string | null
           vendor_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "availability_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "availability_vendor_id_fkey"
             columns: ["vendor_id"]
@@ -55,242 +62,95 @@ export type Database = {
       banners: {
         Row: {
           active: boolean | null
-          created_at: string
-          display_order: number | null
+          created_at: string | null
           id: string
-          image_path: string | null
-          link: string | null
+          image_url: string | null
+          link_text: string | null
+          link_url: string | null
+          position: number | null
           subtitle: string | null
           title: string
+          updated_at: string | null
         }
         Insert: {
           active?: boolean | null
-          created_at?: string
-          display_order?: number | null
+          created_at?: string | null
           id?: string
-          image_path?: string | null
-          link?: string | null
+          image_url?: string | null
+          link_text?: string | null
+          link_url?: string | null
+          position?: number | null
           subtitle?: string | null
           title: string
+          updated_at?: string | null
         }
         Update: {
           active?: boolean | null
-          created_at?: string
-          display_order?: number | null
+          created_at?: string | null
           id?: string
-          image_path?: string | null
-          link?: string | null
+          image_url?: string | null
+          link_text?: string | null
+          link_url?: string | null
+          position?: number | null
           subtitle?: string | null
           title?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
       bookings: {
         Row: {
-          created_at: string
-          customer_email: string | null
-          customer_name: string | null
-          customer_phone: string | null
-          event_date: string | null
+          created_at: string | null
+          event_date: string
           event_type: string | null
           guest_count: number | null
           id: string
           notes: string | null
-          services: Json | null
-          status: Database["public"]["Enums"]["booking_status"] | null
+          service_id: string | null
+          status: string | null
           total_price: number | null
-          updated_at: string
-          user_id: string | null
-          vendor_ids: Json | null
-          venue: string | null
+          updated_at: string | null
+          user_id: string
+          vendor_id: string | null
         }
         Insert: {
-          created_at?: string
-          customer_email?: string | null
-          customer_name?: string | null
-          customer_phone?: string | null
-          event_date?: string | null
+          created_at?: string | null
+          event_date: string
           event_type?: string | null
           guest_count?: number | null
           id?: string
           notes?: string | null
-          services?: Json | null
-          status?: Database["public"]["Enums"]["booking_status"] | null
+          service_id?: string | null
+          status?: string | null
           total_price?: number | null
-          updated_at?: string
-          user_id?: string | null
-          vendor_ids?: Json | null
-          venue?: string | null
+          updated_at?: string | null
+          user_id: string
+          vendor_id?: string | null
         }
         Update: {
-          created_at?: string
-          customer_email?: string | null
-          customer_name?: string | null
-          customer_phone?: string | null
-          event_date?: string | null
+          created_at?: string | null
+          event_date?: string
           event_type?: string | null
           guest_count?: number | null
           id?: string
           notes?: string | null
-          services?: Json | null
-          status?: Database["public"]["Enums"]["booking_status"] | null
+          service_id?: string | null
+          status?: string | null
           total_price?: number | null
-          updated_at?: string
-          user_id?: string | null
-          vendor_ids?: Json | null
-          venue?: string | null
-        }
-        Relationships: []
-      }
-      event_categories: {
-        Row: {
-          created_at: string
-          description: string | null
-          icon: string | null
-          id: string
-          name: string
-          slug: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          icon?: string | null
-          id?: string
-          name: string
-          slug: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          icon?: string | null
-          id?: string
-          name?: string
-          slug?: string
-        }
-        Relationships: []
-      }
-      event_plans: {
-        Row: {
-          ai_summary: string | null
-          budget: string | null
-          color_palette: string | null
-          created_at: string
-          event_date: string | null
-          event_type: string | null
-          guest_size: string | null
-          id: string
-          name: string
-          packages: Json | null
-          raw_data: Json | null
-          theme: string | null
-          updated_at: string
-          user_id: string
-          venue_type: string | null
-        }
-        Insert: {
-          ai_summary?: string | null
-          budget?: string | null
-          color_palette?: string | null
-          created_at?: string
-          event_date?: string | null
-          event_type?: string | null
-          guest_size?: string | null
-          id?: string
-          name: string
-          packages?: Json | null
-          raw_data?: Json | null
-          theme?: string | null
-          updated_at?: string
-          user_id: string
-          venue_type?: string | null
-        }
-        Update: {
-          ai_summary?: string | null
-          budget?: string | null
-          color_palette?: string | null
-          created_at?: string
-          event_date?: string | null
-          event_type?: string | null
-          guest_size?: string | null
-          id?: string
-          name?: string
-          packages?: Json | null
-          raw_data?: Json | null
-          theme?: string | null
-          updated_at?: string
+          updated_at?: string | null
           user_id?: string
-          venue_type?: string | null
-        }
-        Relationships: []
-      }
-      event_services: {
-        Row: {
-          available: boolean | null
-          category_id: string | null
-          created_at: string
-          description: string | null
-          duration: string | null
-          features: Json | null
-          id: string
-          images: Json | null
-          location: string | null
-          price: number
-          price_type: string | null
-          rating: number | null
-          review_count: number | null
-          short_description: string | null
-          title: string
-          updated_at: string
-          vendor_id: string
-        }
-        Insert: {
-          available?: boolean | null
-          category_id?: string | null
-          created_at?: string
-          description?: string | null
-          duration?: string | null
-          features?: Json | null
-          id?: string
-          images?: Json | null
-          location?: string | null
-          price: number
-          price_type?: string | null
-          rating?: number | null
-          review_count?: number | null
-          short_description?: string | null
-          title: string
-          updated_at?: string
-          vendor_id: string
-        }
-        Update: {
-          available?: boolean | null
-          category_id?: string | null
-          created_at?: string
-          description?: string | null
-          duration?: string | null
-          features?: Json | null
-          id?: string
-          images?: Json | null
-          location?: string | null
-          price?: number
-          price_type?: string | null
-          rating?: number | null
-          review_count?: number | null
-          short_description?: string | null
-          title?: string
-          updated_at?: string
-          vendor_id?: string
+          vendor_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "event_services_category_id_fkey"
-            columns: ["category_id"]
+            foreignKeyName: "bookings_service_id_fkey"
+            columns: ["service_id"]
             isOneToOne: false
-            referencedRelation: "event_categories"
+            referencedRelation: "services"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "event_services_vendor_id_fkey"
+            foreignKeyName: "bookings_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendors"
@@ -298,32 +158,110 @@ export type Database = {
           },
         ]
       }
+      categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          slug?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      event_plans: {
+        Row: {
+          budget: number | null
+          created_at: string | null
+          event_date: string | null
+          event_type: string | null
+          guest_count: number | null
+          id: string
+          name: string
+          notes: string | null
+          selected_services: Json | null
+          selected_vendors: Json | null
+          theme: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          budget?: number | null
+          created_at?: string | null
+          event_date?: string | null
+          event_type?: string | null
+          guest_count?: number | null
+          id?: string
+          name: string
+          notes?: string | null
+          selected_services?: Json | null
+          selected_vendors?: Json | null
+          theme?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          budget?: number | null
+          created_at?: string | null
+          event_date?: string | null
+          event_type?: string | null
+          guest_count?: number | null
+          id?: string
+          name?: string
+          notes?: string | null
+          selected_services?: Json | null
+          selected_vendors?: Json | null
+          theme?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
-          body: string
-          created_at: string
+          content: string
+          created_at: string | null
           id: string
           read: boolean | null
           receiver_id: string | null
-          sender_id: string | null
+          sender_id: string
           vendor_id: string | null
         }
         Insert: {
-          body: string
-          created_at?: string
+          content: string
+          created_at?: string | null
           id?: string
           read?: boolean | null
           receiver_id?: string | null
-          sender_id?: string | null
+          sender_id: string
           vendor_id?: string | null
         }
         Update: {
-          body?: string
-          created_at?: string
+          content?: string
+          created_at?: string | null
           id?: string
           read?: boolean | null
           receiver_id?: string | null
-          sender_id?: string | null
+          sender_id?: string
           vendor_id?: string | null
         }
         Relationships: [
@@ -339,30 +277,30 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
-          created_at: string
+          created_at: string | null
           email: string | null
           full_name: string | null
           id: string
           phone: string | null
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           avatar_url?: string | null
-          created_at?: string
+          created_at?: string | null
           email?: string | null
           full_name?: string | null
           id: string
           phone?: string | null
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
           avatar_url?: string | null
-          created_at?: string
+          created_at?: string | null
           email?: string | null
           full_name?: string | null
           id?: string
           phone?: string | null
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -370,99 +308,112 @@ export type Database = {
         Row: {
           active: boolean | null
           code: string
-          created_at: string
-          discount_type: Database["public"]["Enums"]["discount_type"]
+          created_at: string | null
+          description: string | null
+          discount_type: string | null
+          discount_value: number
           id: string
           max_uses: number | null
-          min_order: number | null
-          used_count: number | null
+          min_purchase: number | null
+          uses_count: number | null
           valid_from: string | null
-          valid_to: string | null
-          value: number
+          valid_until: string | null
         }
         Insert: {
           active?: boolean | null
           code: string
-          created_at?: string
-          discount_type: Database["public"]["Enums"]["discount_type"]
+          created_at?: string | null
+          description?: string | null
+          discount_type?: string | null
+          discount_value: number
           id?: string
           max_uses?: number | null
-          min_order?: number | null
-          used_count?: number | null
+          min_purchase?: number | null
+          uses_count?: number | null
           valid_from?: string | null
-          valid_to?: string | null
-          value: number
+          valid_until?: string | null
         }
         Update: {
           active?: boolean | null
           code?: string
-          created_at?: string
-          discount_type?: Database["public"]["Enums"]["discount_type"]
+          created_at?: string | null
+          description?: string | null
+          discount_type?: string | null
+          discount_value?: number
           id?: string
           max_uses?: number | null
-          min_order?: number | null
-          used_count?: number | null
+          min_purchase?: number | null
+          uses_count?: number | null
           valid_from?: string | null
-          valid_to?: string | null
-          value?: number
+          valid_until?: string | null
         }
         Relationships: []
       }
-      user_roles: {
+      services: {
         Row: {
-          created_at: string
+          available: boolean | null
+          category_id: string | null
+          created_at: string | null
+          description: string | null
+          features: string[] | null
           id: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
+          images: string[] | null
+          location: string | null
+          name: string
+          price: number
+          price_type: string | null
+          rating: number | null
+          review_count: number | null
+          short_description: string | null
+          updated_at: string | null
+          vendor_id: string | null
         }
         Insert: {
-          created_at?: string
+          available?: boolean | null
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          features?: string[] | null
           id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id: string
+          images?: string[] | null
+          location?: string | null
+          name: string
+          price: number
+          price_type?: string | null
+          rating?: number | null
+          review_count?: number | null
+          short_description?: string | null
+          updated_at?: string | null
+          vendor_id?: string | null
         }
         Update: {
-          created_at?: string
+          available?: boolean | null
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          features?: string[] | null
           id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
-        }
-        Relationships: []
-      }
-      vendor_portfolio: {
-        Row: {
-          caption: string | null
-          category: string | null
-          created_at: string
-          event_type: string | null
-          id: string
-          image_path: string
-          title: string | null
-          vendor_id: string
-        }
-        Insert: {
-          caption?: string | null
-          category?: string | null
-          created_at?: string
-          event_type?: string | null
-          id?: string
-          image_path: string
-          title?: string | null
-          vendor_id: string
-        }
-        Update: {
-          caption?: string | null
-          category?: string | null
-          created_at?: string
-          event_type?: string | null
-          id?: string
-          image_path?: string
-          title?: string | null
-          vendor_id?: string
+          images?: string[] | null
+          location?: string | null
+          name?: string
+          price?: number
+          price_type?: string | null
+          rating?: number | null
+          review_count?: number | null
+          short_description?: string | null
+          updated_at?: string | null
+          vendor_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "vendor_portfolio_vendor_id_fkey"
+            foreignKeyName: "services_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "services_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendors"
@@ -470,59 +421,68 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       vendors: {
         Row: {
-          avatar_url: string | null
+          active: boolean | null
+          avatar: string | null
           bio: string | null
-          contact_email: string | null
-          contact_phone: string | null
-          created_at: string
+          created_at: string | null
           id: string
           location: string | null
           name: string
           rating: number | null
           review_count: number | null
-          slug: string
           specialty: string | null
-          status: Database["public"]["Enums"]["vendor_status"] | null
-          updated_at: string
-          user_id: string | null
+          updated_at: string | null
           verified: boolean | null
         }
         Insert: {
-          avatar_url?: string | null
+          active?: boolean | null
+          avatar?: string | null
           bio?: string | null
-          contact_email?: string | null
-          contact_phone?: string | null
-          created_at?: string
+          created_at?: string | null
           id?: string
           location?: string | null
           name: string
           rating?: number | null
           review_count?: number | null
-          slug: string
           specialty?: string | null
-          status?: Database["public"]["Enums"]["vendor_status"] | null
-          updated_at?: string
-          user_id?: string | null
+          updated_at?: string | null
           verified?: boolean | null
         }
         Update: {
-          avatar_url?: string | null
+          active?: boolean | null
+          avatar?: string | null
           bio?: string | null
-          contact_email?: string | null
-          contact_phone?: string | null
-          created_at?: string
+          created_at?: string | null
           id?: string
           location?: string | null
           name?: string
           rating?: number | null
           review_count?: number | null
-          slug?: string
           specialty?: string | null
-          status?: Database["public"]["Enums"]["vendor_status"] | null
-          updated_at?: string
-          user_id?: string | null
+          updated_at?: string | null
           verified?: boolean | null
         }
         Relationships: []
@@ -539,14 +499,9 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_vendor_owner: { Args: { _vendor_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "vendor" | "user"
-      availability_status: "available" | "booked" | "tentative"
-      booking_status: "pending" | "in_progress" | "completed" | "cancelled"
-      discount_type: "percentage" | "fixed"
-      vendor_status: "pending" | "approved" | "suspended"
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -674,11 +629,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "vendor", "user"],
-      availability_status: ["available", "booked", "tentative"],
-      booking_status: ["pending", "in_progress", "completed", "cancelled"],
-      discount_type: ["percentage", "fixed"],
-      vendor_status: ["pending", "approved", "suspended"],
+      app_role: ["admin", "moderator", "user"],
     },
   },
 } as const
