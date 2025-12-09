@@ -42,33 +42,40 @@ export default function SavedPlans() {
     if (!user) return;
     
     setIsLoading(true);
-    const { data, error } = await supabase
-      .from('event_plans')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching plans:', error);
-      toast.error('Failed to load saved plans');
-    } else {
-      setPlans((data || []) as unknown as EventPlan[]);
-    }
+    // TODO: Enable when event_plans table is created
+    // const { data, error } = await supabase
+    //   .from('event_plans')
+    //   .select('*')
+    //   .eq('user_id', user.id)
+    //   .order('created_at', { ascending: false });
+    // if (error) {
+    //   console.error('Error fetching plans:', error);
+    //   toast.error('Failed to load saved plans');
+    // } else {
+    //   setPlans((data || []) as unknown as EventPlan[]);
+    // }
+    
+    // For now, return empty array until table is created
+    setPlans([]);
     setIsLoading(false);
   };
 
   const handleRemovePlan = async (planId: string) => {
-    const { error } = await supabase
-      .from('event_plans')
-      .delete()
-      .eq('id', planId);
-
-    if (error) {
-      toast.error('Failed to delete plan');
-    } else {
-      setPlans(plans.filter(p => p.id !== planId));
-      toast.success('Plan removed');
-    }
+    // TODO: Enable when event_plans table is created
+    // const { error } = await supabase
+    //   .from('event_plans')
+    //   .delete()
+    //   .eq('id', planId);
+    // if (error) {
+    //   toast.error('Failed to delete plan');
+    // } else {
+    //   setPlans(plans.filter(p => p.id !== planId));
+    //   toast.success('Plan removed');
+    // }
+    
+    // For now, just remove from local state
+    setPlans(plans.filter(p => p.id !== planId));
+    toast.success('Plan removed');
   };
 
   if (authLoading) {

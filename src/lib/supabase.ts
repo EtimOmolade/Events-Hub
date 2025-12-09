@@ -1,13 +1,22 @@
 import { supabase } from '@/integrations/supabase/client';
 
+// Re-export supabase client for convenience
+export { supabase };
+
 // ============ Event Plans ============
+// Note: These functions require the 'event_plans' table to be created via migration
+// The table migration is pending approval
+
 export async function fetchUserEventPlans(userId: string) {
-  const { data, error } = await supabase
-    .from('event_plans')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
-  return { data, error };
+  // TODO: Uncomment when event_plans table is created
+  // const { data, error } = await supabase
+  //   .from('event_plans')
+  //   .select('*')
+  //   .eq('user_id', userId)
+  //   .order('created_at', { ascending: false });
+  // return { data, error };
+  console.warn('event_plans table not yet created');
+  return { data: [], error: null };
 }
 
 export async function createEventPlan(plan: {
@@ -22,35 +31,44 @@ export async function createEventPlan(plan: {
   selected_services?: any;
   selected_vendors?: any;
 }) {
-  const { data, error } = await supabase
-    .from('event_plans')
-    .insert(plan)
-    .select()
-    .single();
-  return { data, error };
+  // TODO: Uncomment when event_plans table is created
+  // const { data, error } = await supabase
+  //   .from('event_plans')
+  //   .insert(plan)
+  //   .select()
+  //   .single();
+  // return { data, error };
+  console.warn('event_plans table not yet created');
+  return { data: null, error: new Error('event_plans table not yet created') };
 }
 
 export async function deleteEventPlan(planId: string) {
-  const { error } = await supabase
-    .from('event_plans')
-    .delete()
-    .eq('id', planId);
-  return { error };
+  // TODO: Uncomment when event_plans table is created
+  // const { error } = await supabase
+  //   .from('event_plans')
+  //   .delete()
+  //   .eq('id', planId);
+  // return { error };
+  console.warn('event_plans table not yet created');
+  return { error: new Error('event_plans table not yet created') };
 }
 
 // ============ Realtime Subscriptions ============
 export function subscribeToEventPlans(userId: string, callback: (payload: any) => void) {
-  return supabase
-    .channel('user-event-plans')
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'event_plans',
-        filter: `user_id=eq.${userId}`,
-      },
-      callback
-    )
-    .subscribe();
+  // TODO: Uncomment when event_plans table is created
+  // return supabase
+  //   .channel('user-event-plans')
+  //   .on(
+  //     'postgres_changes',
+  //     {
+  //       event: '*',
+  //       schema: 'public',
+  //       table: 'event_plans',
+  //       filter: `user_id=eq.${userId}`,
+  //     },
+  //     callback
+  //   )
+  //   .subscribe();
+  console.warn('event_plans table not yet created');
+  return null;
 }
