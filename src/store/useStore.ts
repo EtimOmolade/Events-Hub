@@ -77,6 +77,15 @@ export interface SavedPlan {
   packages: any[];
 }
 
+export interface AIRecommendation {
+  eventType?: string;
+  theme?: string;
+  colorPalette?: string;
+  guestSize?: string;
+  venueType?: string;
+  budget?: string;
+}
+
 interface AppState {
   // Auth
   user: User | null;
@@ -112,6 +121,10 @@ interface AppState {
   savedPlans: SavedPlan[];
   addSavedPlan: (plan: SavedPlan) => void;
   removeSavedPlan: (planId: string) => void;
+
+  // AI Recommendations
+  aiRecommendation: AIRecommendation | null;
+  setAIRecommendation: (rec: AIRecommendation | null) => void;
 
   // Search
   searchQuery: string;
@@ -217,6 +230,10 @@ export const useStore = create<AppState>()(
       removeSavedPlan: (planId) => {
         set({ savedPlans: get().savedPlans.filter((p) => p.id !== planId) });
       },
+
+      // AI Recommendations
+      aiRecommendation: null,
+      setAIRecommendation: (rec) => set({ aiRecommendation: rec }),
 
       // Search
       searchQuery: '',

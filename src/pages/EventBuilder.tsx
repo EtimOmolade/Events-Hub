@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Sparkles, Save, Scale } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Sparkles, Save, Scale, Wand2 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { EventBuilderProgress } from '@/components/eventBuilder/EventBuilderProgress';
@@ -35,7 +35,7 @@ const STEPS = [
 
 export default function EventBuilder() {
   const navigate = useNavigate();
-  const { addToCart, addSavedPlan, isAuthenticated } = useStore();
+  const { addToCart, addSavedPlan, isAuthenticated, aiRecommendation, setAIRecommendation } = useStore();
   
   const [currentStep, setCurrentStep] = useState(1);
   const [eventType, setEventType] = useState<string | null>(null);
@@ -47,6 +47,58 @@ export default function EventBuilder() {
   const [generatedPackages, setGeneratedPackages] = useState<GeneratedPackage[]>([]);
   const [selectedForComparison, setSelectedForComparison] = useState<string[]>([]);
   const [showComparison, setShowComparison] = useState(false);
+  const [showAIBanner, setShowAIBanner] = useState(false);
+
+  // Check for AI recommendations on mount
+  useEffect(() => {
+    if (aiRecommendation) {
+      setShowAIBanner(true);
+    }
+  }, []);
+
+  // Apply AI recommendations
+  const applyAIRecommendations = () => {
+    if (!aiRecommendation) return;
+    
+    let applied = [];
+    
+    if (aiRecommendation.eventType) {
+      setEventType(aiRecommendation.eventType);
+      applied.push('Event Type');
+    }
+    if (aiRecommendation.theme) {
+      setTheme(aiRecommendation.theme);
+      applied.push('Theme');
+    }
+    if (aiRecommendation.colorPalette) {
+      setColorPalette(aiRecommendation.colorPalette);
+      applied.push('Colors');
+    }
+    if (aiRecommendation.guestSize) {
+      setGuestSize(aiRecommendation.guestSize);
+      applied.push('Guest Size');
+    }
+    if (aiRecommendation.venueType) {
+      setVenueType(aiRecommendation.venueType);
+      applied.push('Venue');
+    }
+    if (aiRecommendation.budget) {
+      setBudget(aiRecommendation.budget);
+      applied.push('Budget');
+    }
+
+    setShowAIBanner(false);
+    setAIRecommendation(null);
+    
+    toast.success('AI preferences applied!', {
+      description: `Applied: ${applied.join(', ')}`,
+    });
+  };
+
+  const dismissAIBanner = () => {
+    setShowAIBanner(false);
+    setAIRecommendation(null);
+  };
 
   const canProceed = () => {
     switch (currentStep) {
@@ -163,6 +215,41 @@ export default function EventBuilder() {
               Tell us about your dream event and we'll create personalized package recommendations just for you
             </p>
           </motion.div>
+
+          {/* AI Recommendations Banner */}
+          <AnimatePresence>
+            {showAIBanner && aiRecommendation && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="mb-6 p-4 bg-gradient-to-r from-gold/10 to-gold-light/10 border border-gold/30 rounded-xl"
+              >
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center">
+                      <Wand2 className="w-5 h-5 text-gold" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-sm">AI Recommendations Ready</h3>
+                      <p className="text-xs text-muted-foreground">
+                        Based on your conversation, we've prepared some suggestions
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" size="sm" onClick={dismissAIBanner}>
+                      Dismiss
+                    </Button>
+                    <Button variant="gold" size="sm" onClick={applyAIRecommendations} className="gap-2">
+                      <Wand2 className="w-4 h-4" />
+                      Apply Suggestions
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Progress */}
           <EventBuilderProgress steps={STEPS} currentStep={currentStep} />

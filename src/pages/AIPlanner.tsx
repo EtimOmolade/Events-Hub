@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Trash2, Save, ArrowLeft } from 'lucide-react';
+import { Sparkles, Trash2, Save, ArrowLeft, Wand2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { AIChatMessage } from '@/components/ai/AIChatMessage';
 import { AIChatInput } from '@/components/ai/AIChatInput';
 import { useStore } from '@/store/useStore';
 import { useToast } from '@/hooks/use-toast';
+import { parseAIRecommendations, hasValidRecommendation } from '@/utils/aiParser';
 
 const quickPrompts = [
   "Help me plan a 200-guest wedding with gold and white theme",
@@ -23,9 +24,16 @@ const quickPrompts = [
 export default function AIPlanner() {
   const navigate = useNavigate();
   const { messages, isLoading, error, sendMessage, clearChat } = useAIChat();
-  const { isAuthenticated } = useStore();
+  const { isAuthenticated, setAIRecommendation } = useStore();
   const { toast } = useToast();
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Parse recommendations from the latest assistant message
+  const latestAssistantMessage = [...messages].reverse().find(m => m.role === 'assistant');
+  const parsedRecommendation = latestAssistantMessage 
+    ? parseAIRecommendations(latestAssistantMessage.content) 
+    : null;
+  const canAutoFill = hasValidRecommendation(parsedRecommendation);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -57,6 +65,17 @@ export default function AIPlanner() {
       title: "Plan saved!",
       description: "Your event plan has been saved to your account.",
     });
+  };
+
+  const handleAutoFill = () => {
+    if (parsedRecommendation) {
+      setAIRecommendation(parsedRecommendation);
+      toast({
+        title: "AI recommendations ready!",
+        description: "Opening Event Builder with your preferences",
+      });
+      navigate('/event-builder');
+    }
   };
 
   return (
@@ -98,10 +117,16 @@ export default function AIPlanner() {
                   <Trash2 className="w-4 h-4 mr-2" />
                   Clear
                 </Button>
-                <Button variant="gold" size="sm" onClick={handleSavePlan}>
+                <Button variant="outline" size="sm" onClick={handleSavePlan}>
                   <Save className="w-4 h-4 mr-2" />
                   Save Plan
                 </Button>
+                {canAutoFill && (
+                  <Button variant="gold" size="sm" onClick={handleAutoFill}>
+                    <Wand2 className="w-4 h-4 mr-2" />
+                    Use in Builder
+                  </Button>
+                )}
               </div>
             </div>
           </motion.div>
