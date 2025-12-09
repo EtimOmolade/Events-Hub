@@ -143,7 +143,7 @@ export function Header() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 md:hidden"
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] md:hidden"
               onClick={() => setIsMenuOpen(false)}
             />
             {/* Menu panel */}
@@ -152,7 +152,7 @@ export function Header() {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed inset-y-0 right-0 w-full max-w-sm bg-card shadow-2xl border-l border-border z-50 md:hidden overflow-y-auto"
+              className="fixed inset-y-0 right-0 w-full max-w-sm bg-background shadow-2xl border-l border-border z-[101] md:hidden overflow-y-auto"
             >
               <div className="flex flex-col h-full p-6">
                 <div className="flex items-center justify-between mb-8">
@@ -164,7 +164,7 @@ export function Header() {
                       Events<span className="text-gold">Hub</span>
                     </span>
                   </Link>
-                  <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(false)}>
+                  <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(false)} className="touch-manipulation">
                     <X className="h-6 w-6" />
                   </Button>
                 </div>
@@ -172,14 +172,14 @@ export function Header() {
                 {/* Search in mobile menu */}
                 <Button
                   variant="outline"
-                  className="w-full justify-start mb-6 text-muted-foreground"
+                  className="w-full justify-start mb-6 text-muted-foreground touch-manipulation"
                   onClick={() => { setIsMenuOpen(false); setIsSearchOpen(true); }}
                 >
                   <Search className="h-4 w-4 mr-2" />
                   Search services...
                 </Button>
 
-                <nav className="flex flex-col gap-2 flex-1">
+                <nav className="flex flex-col gap-1 flex-1">
                   {[
                     { to: '/', label: 'Home' },
                     { to: '/ai-planner', label: '✨ AI Planner', highlight: true },
@@ -195,12 +195,12 @@ export function Header() {
                       key={item.to}
                       to={item.to}
                       onClick={() => setIsMenuOpen(false)}
-                      className={`text-lg font-medium py-3 px-4 rounded-lg transition-colors ${
+                      className={`text-lg font-medium py-3 px-4 rounded-lg transition-colors touch-manipulation active:scale-[0.98] ${
                         isActive(item.to)
                           ? 'bg-gold/20 text-gold'
                           : item.highlight
-                            ? 'text-gold hover:bg-gold/10'
-                            : 'hover:text-gold hover:bg-muted'
+                            ? 'text-gold hover:bg-gold/10 active:bg-gold/20'
+                            : 'text-foreground hover:text-gold hover:bg-muted active:bg-muted/80'
                       }`}
                     >
                       {item.label}
@@ -211,14 +211,14 @@ export function Header() {
                 <div className="pt-6 border-t border-border">
                   {isAuthenticated ? (
                     <Link to="/account" onClick={() => setIsMenuOpen(false)}>
-                      <Button variant="gold" className="w-full" size="lg">
+                      <Button variant="gold" className="w-full touch-manipulation" size="lg">
                         <User className="h-5 w-5" />
                         My Account
                       </Button>
                     </Link>
                   ) : (
                     <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
-                      <Button variant="gold" className="w-full" size="lg">
+                      <Button variant="gold" className="w-full touch-manipulation" size="lg">
                         Sign In / Register
                       </Button>
                     </Link>
