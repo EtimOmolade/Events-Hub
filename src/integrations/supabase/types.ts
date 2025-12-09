@@ -14,60 +14,7 @@ export type Database = {
   }
   public: {
     Tables: {
-      ai_plans: {
-        Row: {
-          ai_summary: string | null
-          budget_range: string | null
-          color_palette: string | null
-          created_at: string
-          event_type: string | null
-          guest_count: number | null
-          id: string
-          packages: Json | null
-          raw_query: string
-          recommended_vendors: Json | null
-          theme: string | null
-          timeline_tips: Json | null
-          updated_at: string
-          user_id: string
-          venue_type: string | null
-        }
-        Insert: {
-          ai_summary?: string | null
-          budget_range?: string | null
-          color_palette?: string | null
-          created_at?: string
-          event_type?: string | null
-          guest_count?: number | null
-          id?: string
-          packages?: Json | null
-          raw_query: string
-          recommended_vendors?: Json | null
-          theme?: string | null
-          timeline_tips?: Json | null
-          updated_at?: string
-          user_id: string
-          venue_type?: string | null
-        }
-        Update: {
-          ai_summary?: string | null
-          budget_range?: string | null
-          color_palette?: string | null
-          created_at?: string
-          event_type?: string | null
-          guest_count?: number | null
-          id?: string
-          packages?: Json | null
-          raw_query?: string
-          recommended_vendors?: Json | null
-          theme?: string | null
-          timeline_tips?: Json | null
-          updated_at?: string
-          user_id?: string
-          venue_type?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never
