@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ScrollToTop } from "./components/ScrollToTop";
+import { FloatingAIWidget } from "./components/ai/FloatingAIWidget";
 import Index from "./pages/Index";
 import Services from "./pages/Services";
 import ServiceDetail from "./pages/ServiceDetail";
@@ -17,6 +18,7 @@ import Vendors from "./pages/Vendors";
 import VendorDetail from "./pages/VendorDetail";
 import EventBuilder from "./pages/EventBuilder";
 import SavedPlans from "./pages/SavedPlans";
+import AIPlanner from "./pages/AIPlanner";
 import AdminLogin from "./pages/AdminLogin";
 import AdminServices from "./pages/admin/AdminServices";
 import AdminVendors from "./pages/admin/AdminVendors";
@@ -49,6 +51,7 @@ const App = () => (
           <Route path="/vendor/:id" element={<VendorDetail />} />
           <Route path="/event-builder" element={<EventBuilder />} />
           <Route path="/saved-plans" element={<SavedPlans />} />
+          <Route path="/ai-planner" element={<AIPlanner />} />
           <Route path="/admin" element={<AdminServices />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin/services" element={<AdminServices />} />
@@ -60,6 +63,7 @@ const App = () => (
           <Route path="/account" element={<Account />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <FloatingAIWidget />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

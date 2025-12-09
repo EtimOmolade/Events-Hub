@@ -344,7 +344,7 @@ export default function AdminServices() {
                     <Label htmlFor="price_type">Price Type</Label>
                     <Select
                       value={formData.priceType}
-                      onValueChange={(value) => setFormData({ ...formData, priceType: value })}
+                      onValueChange={(value: "fixed" | "hourly" | "starting") => setFormData({ ...formData, priceType: value })}
                     >
                       <SelectTrigger>
                         <SelectValue />
