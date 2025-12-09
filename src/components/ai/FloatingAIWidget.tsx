@@ -1,22 +1,46 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, X, Minimize2 } from 'lucide-react';
+import { Sparkles, X, Minimize2, Wand2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAIChat } from '@/hooks/useAIChat';
 import { AIChatMessage } from './AIChatMessage';
 import { AIChatInput } from './AIChatInput';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useStore } from '@/store/useStore';
+import { parseAIRecommendations, hasValidRecommendation } from '@/utils/aiParser';
+import { toast } from 'sonner';
 
 export function FloatingAIWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const { messages, isLoading, error, sendMessage, clearChat } = useAIChat();
+  const { setAIRecommendation } = useStore();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // Parse recommendations from the latest assistant message
+  const latestAssistantMessage = [...messages].reverse().find(m => m.role === 'assistant');
+  const parsedRecommendation = latestAssistantMessage 
+    ? parseAIRecommendations(latestAssistantMessage.content) 
+    : null;
+  const canAutoFill = hasValidRecommendation(parsedRecommendation);
+
+  const handleAutoFill = () => {
+    if (parsedRecommendation) {
+      setAIRecommendation(parsedRecommendation);
+      setIsOpen(false);
+      toast.success('AI recommendations ready!', {
+        description: 'Opening Event Builder with your preferences',
+      });
+      navigate('/event-builder');
+    }
+  };
 
   return (
     <>
@@ -49,7 +73,7 @@ export function FloatingAIWidget() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed bottom-6 right-6 z-50 w-[380px] h-[500px] max-h-[80vh] bg-card border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+            className="fixed bottom-6 right-6 z-50 w-[380px] h-[520px] max-h-[80vh] bg-card border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-border bg-muted/50">
@@ -120,6 +144,21 @@ export function FloatingAIWidget() {
                 </div>
               )}
             </ScrollArea>
+
+            {/* Auto-fill Button */}
+            {canAutoFill && (
+              <div className="px-4 py-2 border-t border-border bg-gold/5">
+                <Button
+                  onClick={handleAutoFill}
+                  variant="gold"
+                  size="sm"
+                  className="w-full gap-2"
+                >
+                  <Wand2 className="w-4 h-4" />
+                  Auto-fill Event Builder
+                </Button>
+              </div>
+            )}
 
             {/* Input */}
             <AIChatInput onSend={sendMessage} isLoading={isLoading} />
