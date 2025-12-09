@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Edit2, Trash2, Loader2, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -21,53 +21,38 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminProtectedRoute } from '@/components/admin/AdminProtectedRoute';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { categories as localCategories } from '@/data/services';
 
 interface Category {
   id: string;
   name: string;
   slug: string;
-  icon: string | null;
-  description: string | null;
-  created_at: string;
+  icon: string;
+  description: string;
 }
 
 export default function AdminCategories() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [categories, setCategories] = useState<Category[]>(
+    localCategories.map(c => ({
+      id: c.id,
+      name: c.name,
+      slug: c.id,
+      icon: c.icon,
+      description: c.description,
+    }))
+  );
+  const [isLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Form state
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
     icon: '',
     description: '',
   });
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('name', { ascending: true });
-
-      if (error) throw error;
-      setCategories(data || []);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-      toast.error('Failed to load categories');
-    }
-    setIsLoading(false);
-  };
 
   const generateSlug = (name: string) => {
     return name
@@ -78,12 +63,7 @@ export default function AdminCategories() {
 
   const openCreateDialog = () => {
     setEditingCategory(null);
-    setFormData({
-      name: '',
-      slug: '',
-      icon: '',
-      description: '',
-    });
+    setFormData({ name: '', slug: '', icon: '', description: '' });
     setIsDialogOpen(true);
   };
 
@@ -110,51 +90,28 @@ export default function AdminCategories() {
     e.preventDefault();
     setIsSaving(true);
 
-    const categoryData = {
-      name: formData.name,
-      slug: formData.slug,
-      icon: formData.icon || null,
-      description: formData.description || null,
-    };
-
-    try {
-      if (editingCategory) {
-        const { error } = await supabase
-          .from('categories')
-          .update(categoryData)
-          .eq('id', editingCategory.id);
-
-        if (error) throw error;
-        toast.success('Category updated successfully');
-      } else {
-        const { error } = await supabase
-          .from('categories')
-          .insert([categoryData]);
-
-        if (error) throw error;
-        toast.success('Category created successfully');
-      }
-
-      setIsDialogOpen(false);
-      fetchCategories();
-    } catch (error: any) {
-      console.error('Error saving category:', error);
-      toast.error(error.message || 'Failed to save category');
+    if (editingCategory) {
+      setCategories(prev =>
+        prev.map(c => c.id === editingCategory.id ? { ...c, ...formData } : c)
+      );
+      toast.success('Category updated successfully');
+    } else {
+      const newCategory: Category = {
+        id: `cat-${Date.now()}`,
+        ...formData,
+      };
+      setCategories(prev => [...prev, newCategory]);
+      toast.success('Category created successfully');
     }
+
+    setIsDialogOpen(false);
     setIsSaving(false);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (!confirm('Are you sure you want to delete this category?')) return;
-
-    try {
-      const { error } = await supabase.from('categories').delete().eq('id', id);
-      if (error) throw error;
-      toast.success('Category deleted successfully');
-      fetchCategories();
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to delete category');
-    }
+    setCategories(prev => prev.filter(c => c.id !== id));
+    toast.success('Category deleted successfully');
   };
 
   return (
@@ -231,7 +188,6 @@ export default function AdminCategories() {
             </div>
           )}
 
-          {/* Create/Edit Dialog */}
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogContent>
               <DialogHeader>
@@ -249,7 +205,6 @@ export default function AdminCategories() {
                     required
                   />
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="slug">Slug *</Label>
                   <Input
@@ -259,7 +214,6 @@ export default function AdminCategories() {
                     required
                   />
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="icon">Icon (emoji)</Label>
                   <Input
@@ -270,7 +224,6 @@ export default function AdminCategories() {
                     maxLength={4}
                   />
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="description">Description</Label>
                   <Textarea
@@ -280,7 +233,6 @@ export default function AdminCategories() {
                     rows={3}
                   />
                 </div>
-
                 <DialogFooter>
                   <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                     Cancel

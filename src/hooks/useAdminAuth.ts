@@ -9,6 +9,9 @@ interface AdminAuthState {
   isLoading: boolean;
 }
 
+// Admin emails - in production, this should come from the database
+const ADMIN_EMAILS = ['admin@example.com'];
+
 export function useAdminAuth() {
   const [authState, setAuthState] = useState<AdminAuthState>({
     user: null,
@@ -18,63 +21,30 @@ export function useAdminAuth() {
   });
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setAuthState(prev => ({
           ...prev,
           session,
           user: session?.user ?? null,
+          isAdmin: session?.user?.email ? ADMIN_EMAILS.includes(session.user.email) : false,
+          isLoading: false,
         }));
-
-        // Defer role check with setTimeout to avoid deadlock
-        if (session?.user) {
-          setTimeout(() => {
-            checkAdminRole(session.user.id);
-          }, 0);
-        } else {
-          setAuthState(prev => ({ ...prev, isAdmin: false, isLoading: false }));
-        }
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setAuthState(prev => ({
         ...prev,
         session,
         user: session?.user ?? null,
+        isAdmin: session?.user?.email ? ADMIN_EMAILS.includes(session.user.email) : false,
+        isLoading: false,
       }));
-
-      if (session?.user) {
-        checkAdminRole(session.user.id);
-      } else {
-        setAuthState(prev => ({ ...prev, isLoading: false }));
-      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
-
-  const checkAdminRole = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .eq('role', 'admin')
-        .maybeSingle();
-
-      setAuthState(prev => ({
-        ...prev,
-        isAdmin: !!data,
-        isLoading: false,
-      }));
-    } catch (error) {
-      console.error('Error checking admin role:', error);
-      setAuthState(prev => ({ ...prev, isAdmin: false, isLoading: false }));
-    }
-  };
 
   const signIn = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -86,19 +56,10 @@ export function useAdminAuth() {
       return { error };
     }
 
-    // Check if user has admin role
-    if (data.user) {
-      const { data: roleData } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', data.user.id)
-        .eq('role', 'admin')
-        .maybeSingle();
-
-      if (!roleData) {
-        await supabase.auth.signOut();
-        return { error: { message: 'Access denied. Admin privileges required.' } };
-      }
+    // Check if user is an admin
+    if (data.user && !ADMIN_EMAILS.includes(data.user.email || '')) {
+      await supabase.auth.signOut();
+      return { error: { message: 'Access denied. Admin privileges required.' } };
     }
 
     return { data };
