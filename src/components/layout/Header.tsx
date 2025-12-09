@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, ShoppingBag, Heart, User, Menu, X, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useStore } from '@/store/useStore';
+import { useAuth } from '@/hooks/useAuth';
 import { SmartSearch } from '@/components/ui/SmartSearch';
 
 export function Header() {
@@ -11,7 +12,8 @@ export function Header() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { cart, wishlist, isAuthenticated } = useStore();
+  const { cart, wishlist } = useStore();
+  const { isAuthenticated } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
 
