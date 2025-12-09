@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, ShoppingBag, Heart, User, Menu, X, Shield, Sparkles } from 'lucide-react';
+import { Search, ShoppingBag, Heart, User, Menu, X, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useStore } from '@/store/useStore';
 import { SmartSearch } from '@/components/ui/SmartSearch';
@@ -10,7 +10,10 @@ export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { cart, wishlist, isAuthenticated } = useStore();
+
+  const isActive = (path: string) => location.pathname === path;
 
   // Prevent body scroll when mobile menu is open
   useEffect(() => {
@@ -42,19 +45,19 @@ export function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-8">
-            <Link to="/" className="text-foreground/80 hover:text-gold transition-colors">
+            <Link to="/" className={`transition-colors ${isActive('/') ? 'text-gold font-medium' : 'text-foreground/80 hover:text-gold'}`}>
               Home
             </Link>
-            <Link to="/services" className="text-foreground/80 hover:text-gold transition-colors">
+            <Link to="/services" className={`transition-colors ${isActive('/services') ? 'text-gold font-medium' : 'text-foreground/80 hover:text-gold'}`}>
               Services
             </Link>
-            <Link to="/ai-planner" className="text-gold hover:text-gold-light transition-colors flex items-center gap-1 font-medium">
+            <Link to="/ai-planner" className={`flex items-center gap-1 transition-colors ${isActive('/ai-planner') ? 'text-gold-light font-semibold' : 'text-gold hover:text-gold-light font-medium'}`}>
               <Sparkles className="h-4 w-4" /> AI Planner
             </Link>
-            <Link to="/event-builder" className="text-foreground/80 hover:text-gold transition-colors">
+            <Link to="/event-builder" className={`transition-colors ${isActive('/event-builder') ? 'text-gold font-medium' : 'text-foreground/80 hover:text-gold'}`}>
               Event Builder
             </Link>
-            <Link to="/vendors" className="text-foreground/80 hover:text-gold transition-colors">
+            <Link to="/vendors" className={`transition-colors ${isActive('/vendors') ? 'text-gold font-medium' : 'text-foreground/80 hover:text-gold'}`}>
               Vendors
             </Link>
           </nav>
@@ -192,8 +195,12 @@ export function Header() {
                       key={item.to}
                       to={item.to}
                       onClick={() => setIsMenuOpen(false)}
-                      className={`text-lg font-medium py-3 px-4 rounded-lg hover:bg-muted transition-colors ${
-                        item.highlight ? 'text-gold hover:bg-gold/10' : 'hover:text-gold'
+                      className={`text-lg font-medium py-3 px-4 rounded-lg transition-colors ${
+                        isActive(item.to)
+                          ? 'bg-gold/20 text-gold'
+                          : item.highlight
+                            ? 'text-gold hover:bg-gold/10'
+                            : 'hover:text-gold hover:bg-muted'
                       }`}
                     >
                       {item.label}

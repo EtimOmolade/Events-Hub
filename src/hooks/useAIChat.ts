@@ -43,6 +43,12 @@ export function useAIChat() {
 
       if (!resp.ok) {
         const errorData = await resp.json().catch(() => ({}));
+        if (resp.status === 429) {
+          throw new Error("Rate limit exceeded. Please wait a moment and try again.");
+        }
+        if (resp.status === 402) {
+          throw new Error("AI credits exhausted. Please add funds to continue.");
+        }
         throw new Error(errorData.error || `Request failed with status ${resp.status}`);
       }
 
