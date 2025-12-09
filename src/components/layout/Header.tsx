@@ -98,18 +98,18 @@ export function Header() {
             </Link>
 
             {isAuthenticated ? (
-              <Link to="/account">
-                <Button variant="gold" size="sm">
+              <Button variant="gold" size="sm" asChild>
+                <Link to="/account">
                   <User className="h-4 w-4" />
                   Account
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             ) : (
-              <Link to="/auth">
-                <Button variant="gold" size="sm">
+              <Button variant="gold" size="sm" asChild>
+                <Link to="/auth">
                   Sign In
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             )}
           </div>
 
@@ -212,18 +212,18 @@ export function Header() {
 
                 <div className="pt-6 border-t border-border">
                   {isAuthenticated ? (
-                    <Link to="/account" onClick={() => setIsMenuOpen(false)}>
-                      <Button variant="gold" className="w-full touch-manipulation" size="lg">
+                    <Button variant="gold" className="w-full touch-manipulation" size="lg" asChild>
+                      <Link to="/account" onClick={() => setIsMenuOpen(false)}>
                         <User className="h-5 w-5" />
                         My Account
-                      </Button>
-                    </Link>
+                      </Link>
+                    </Button>
                   ) : (
-                    <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
-                      <Button variant="gold" className="w-full touch-manipulation" size="lg">
+                    <Button variant="gold" className="w-full touch-manipulation" size="lg" asChild>
+                      <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
                         Sign In / Register
-                      </Button>
-                    </Link>
+                      </Link>
+                    </Button>
                   )}
                 </div>
               </div>
