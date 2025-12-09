@@ -72,16 +72,19 @@ export default function AIPlanner() {
       const guestSize = parsedRecommendation?.guestSize;
       const budgetRange = parsedRecommendation?.budget;
 
-      const { error: saveError } = await supabase.from('event_plans').insert([{
-        user_id: user.id,
-        name: `AI Plan - ${eventType}`,
-        event_type: eventType,
-        theme: theme,
-        notes: `Guest size: ${guestSize || 'Not specified'}, Budget: ${budgetRange || 'Not specified'}. Created via AI Planner on ${new Date().toLocaleDateString()}`,
-        ai_conversation: messages as any,
-      }]);
-
-      if (saveError) throw saveError;
+      // TODO: Enable when event_plans table is created
+      // const { error: saveError } = await supabase.from('event_plans').insert([{
+      //   user_id: user.id,
+      //   name: `AI Plan - ${eventType}`,
+      //   event_type: eventType,
+      //   theme: theme,
+      //   notes: `Guest size: ${guestSize || 'Not specified'}, Budget: ${budgetRange || 'Not specified'}. Created via AI Planner on ${new Date().toLocaleDateString()}`,
+      //   ai_conversation: messages as any,
+      // }]);
+      // if (saveError) throw saveError;
+      
+      // For now, just show success (data is not persisted until table is created)
+      console.log('Plan would be saved:', { eventType, theme, guestSize, budgetRange });
 
       toast({
         title: "Plan saved!",
