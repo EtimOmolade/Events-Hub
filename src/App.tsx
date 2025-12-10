@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { ThemeProvider } from "./providers/ThemeProvider";
 import { FloatingAIWidget } from "./components/ai/FloatingAIWidget";
@@ -17,7 +17,8 @@ import Bookings from "./pages/Bookings";
 import Categories from "./pages/Categories";
 import Vendors from "./pages/Vendors";
 import VendorDetail from "./pages/VendorDetail";
-import Planner from "./pages/Planner";
+import AIPlanner from "./pages/AIPlanner";
+import EventBuilder from "./pages/EventBuilder";
 import SavedPlans from "./pages/SavedPlans";
 import AdminLogin from "./pages/AdminLogin";
 import AdminServices from "./pages/admin/AdminServices";
@@ -50,11 +51,8 @@ const App = () => (
             <Route path="/categories" element={<Categories />} />
             <Route path="/vendors" element={<Vendors />} />
             <Route path="/vendor/:id" element={<VendorDetail />} />
-            {/* Unified Planner - replaces both ai-planner and event-builder */}
-            <Route path="/planner" element={<Planner />} />
-            {/* Redirects from old routes */}
-            <Route path="/ai-planner" element={<Navigate to="/planner" replace />} />
-            <Route path="/event-builder" element={<Navigate to="/planner" replace />} />
+            <Route path="/ai-planner" element={<AIPlanner />} />
+            <Route path="/event-builder" element={<EventBuilder />} />
             <Route path="/saved-plans" element={<SavedPlans />} />
             <Route path="/admin" element={<AdminServices />} />
             <Route path="/admin/login" element={<AdminLogin />} />

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, ShoppingBag, Heart, User, Menu, X, Sparkles } from 'lucide-react';
+import { Search, ShoppingBag, Heart, User, Menu, X, Sparkles, ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useStore } from '@/store/useStore';
 import { useAuth } from '@/hooks/useAuth';
@@ -53,8 +53,11 @@ export function Header() {
             <Link to="/services" className={`transition-colors ${isActive('/services') ? 'text-gold font-medium' : 'text-foreground/80 hover:text-gold'}`}>
               Services
             </Link>
-            <Link to="/planner" className={`flex items-center gap-1 transition-colors ${isActive('/planner') ? 'text-gold-light font-semibold' : 'text-gold hover:text-gold-light font-medium'}`}>
-              <Sparkles className="h-4 w-4" /> Event Planner
+            <Link to="/ai-planner" className={`flex items-center gap-1 transition-colors ${isActive('/ai-planner') ? 'text-gold-light font-semibold' : 'text-gold hover:text-gold-light font-medium'}`}>
+              <Sparkles className="h-4 w-4" /> AI Planner
+            </Link>
+            <Link to="/event-builder" className={`flex items-center gap-1 transition-colors ${isActive('/event-builder') ? 'text-gold-light font-semibold' : 'text-foreground/80 hover:text-gold'}`}>
+              <ClipboardList className="h-4 w-4" /> Event Builder
             </Link>
             <Link to="/vendors" className={`transition-colors ${isActive('/vendors') ? 'text-gold font-medium' : 'text-foreground/80 hover:text-gold'}`}>
               Vendors
@@ -181,7 +184,8 @@ export function Header() {
                 <nav className="flex flex-col gap-1 flex-1">
                   {[
                     { to: '/', label: 'Home' },
-                    { to: '/planner', label: '✨ Event Planner', highlight: true },
+                    { to: '/ai-planner', label: '✨ AI Planner', highlight: true },
+                    { to: '/event-builder', label: '📋 Event Builder' },
                     { to: '/services', label: 'Services' },
                     { to: '/categories', label: 'Categories' },
                     { to: '/vendors', label: 'Vendors' },
