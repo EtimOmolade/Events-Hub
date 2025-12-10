@@ -4,13 +4,12 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface Profile {
   id: string;
-  user_id: string;
   full_name: string | null;
   email: string | null;
   avatar_url: string | null;
   phone: string | null;
-  created_at: string;
-  updated_at: string;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 export function useProfile() {
@@ -29,7 +28,7 @@ export function useProfile() {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('id', user.id)
       .maybeSingle();
 
     if (error) {
@@ -37,7 +36,6 @@ export function useProfile() {
       // Fallback to auth user data if profile doesn't exist yet
       setProfile({
         id: user.id,
-        user_id: user.id,
         full_name: user.user_metadata?.full_name || null,
         email: user.email || null,
         avatar_url: user.user_metadata?.avatar_url || null,
@@ -52,7 +50,7 @@ export function useProfile() {
       const { data: newProfile, error: insertError } = await supabase
         .from('profiles')
         .insert({
-          user_id: user.id,
+          id: user.id,
           email: user.email,
           full_name: user.user_metadata?.full_name || null,
         })
@@ -61,7 +59,17 @@ export function useProfile() {
 
       if (insertError) {
         console.error('Error creating profile:', insertError);
-      } else {
+        // Use fallback profile
+        setProfile({
+          id: user.id,
+          full_name: user.user_metadata?.full_name || null,
+          email: user.email || null,
+          avatar_url: user.user_metadata?.avatar_url || null,
+          phone: user.phone || null,
+          created_at: user.created_at,
+          updated_at: new Date().toISOString(),
+        });
+      } else if (newProfile) {
         setProfile(newProfile);
       }
     }
@@ -77,13 +85,13 @@ export function useProfile() {
     }
   }, [isAuthenticated, user, fetchProfile]);
 
-  const updateProfile = async (updates: Partial<Omit<Profile, 'id' | 'user_id' | 'created_at' | 'updated_at'>>) => {
+  const updateProfile = async (updates: Partial<Omit<Profile, 'id' | 'created_at' | 'updated_at'>>) => {
     if (!user) return { error: { message: 'Not authenticated' } };
 
     const { data, error } = await supabase
       .from('profiles')
       .update(updates)
-      .eq('user_id', user.id)
+      .eq('id', user.id)
       .select()
       .single();
 

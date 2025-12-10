@@ -191,7 +191,9 @@ export type Database = {
       event_plans: {
         Row: {
           ai_conversation: Json | null
+          ai_summary: string | null
           budget: number | null
+          colors: string | null
           created_at: string | null
           event_date: string | null
           event_type: string | null
@@ -199,15 +201,20 @@ export type Database = {
           id: string
           name: string
           notes: string | null
+          raw_query: string | null
           selected_services: Json | null
           selected_vendors: Json | null
           theme: string | null
+          timeline: Json | null
           updated_at: string | null
           user_id: string
+          venue: string | null
         }
         Insert: {
           ai_conversation?: Json | null
+          ai_summary?: string | null
           budget?: number | null
+          colors?: string | null
           created_at?: string | null
           event_date?: string | null
           event_type?: string | null
@@ -215,15 +222,20 @@ export type Database = {
           id?: string
           name: string
           notes?: string | null
+          raw_query?: string | null
           selected_services?: Json | null
           selected_vendors?: Json | null
           theme?: string | null
+          timeline?: Json | null
           updated_at?: string | null
           user_id: string
+          venue?: string | null
         }
         Update: {
           ai_conversation?: Json | null
+          ai_summary?: string | null
           budget?: number | null
+          colors?: string | null
           created_at?: string | null
           event_date?: string | null
           event_type?: string | null
@@ -231,11 +243,14 @@ export type Database = {
           id?: string
           name?: string
           notes?: string | null
+          raw_query?: string | null
           selected_services?: Json | null
           selected_vendors?: Json | null
           theme?: string | null
+          timeline?: Json | null
           updated_at?: string | null
           user_id?: string
+          venue?: string | null
         }
         Relationships: []
       }
