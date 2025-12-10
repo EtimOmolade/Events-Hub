@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { VendorAvailabilityCalendar } from '@/components/vendors/VendorAvailabilityCalendar';
 import { VendorPortfolioGallery } from '@/components/vendors/VendorPortfolioGallery';
 import { VendorMessaging } from '@/components/vendors/VendorMessaging';
+import { BookingConfirmationDialog } from '@/components/vendors/BookingConfirmationDialog';
 import { ServiceCard } from '@/components/services/ServiceCard';
 import { vendors, services } from '@/data/services';
 import { getVendorPortfolio } from '@/data/vendorData';
@@ -21,10 +22,11 @@ import { toast } from 'sonner';
 export default function VendorDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated } = useStore();
+  const { isAuthenticated, user } = useStore();
   
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isMessagingOpen, setIsMessagingOpen] = useState(false);
+  const [isBookingOpen, setIsBookingOpen] = useState(false);
 
   const vendor = vendors.find(v => v.id === id);
   const vendorServices = services.filter(s => s.vendorId === id);
@@ -60,9 +62,7 @@ export default function VendorDetail() {
       navigate('/auth');
       return;
     }
-    toast.success(`Request sent to ${vendor.name}!`, {
-      description: `For ${selectedDate.toLocaleDateString()}`,
-    });
+    setIsBookingOpen(true);
   };
 
   return (
@@ -252,6 +252,19 @@ export default function VendorDetail() {
         onClose={() => setIsMessagingOpen(false)}
         initialVendorId={vendor.id}
       />
+
+      {/* Booking Confirmation Dialog */}
+      {selectedDate && (
+        <BookingConfirmationDialog
+          isOpen={isBookingOpen}
+          onClose={() => setIsBookingOpen(false)}
+          vendorName={vendor.name}
+          vendorId={vendor.id}
+          selectedDate={selectedDate}
+          userEmail={user?.email}
+          userName={user?.name}
+        />
+      )}
     </Layout>
   );
 }
