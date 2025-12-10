@@ -1,6 +1,6 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { useStore } from '@/store/useStore';
@@ -8,6 +8,9 @@ import { formatPrice } from '@/data/services';
 
 export default function Cart() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const previousBuilderState = location.state?.builderState;
+
   const { cart, removeFromCart, updateCartQuantity, getCartTotal, isAuthenticated } = useStore();
 
   const total = getCartTotal();
@@ -19,6 +22,15 @@ export default function Cart() {
       navigate('/auth?redirect=/checkout');
     } else {
       navigate('/checkout');
+    }
+  };
+
+  const handleBack = () => {
+    if (previousBuilderState) {
+      // Navigate back to Event Builder with state preserved
+      navigate('/event-builder', { state: { builderState: previousBuilderState } });
+    } else {
+      navigate(-1); // fallback
     }
   };
 
@@ -52,6 +64,17 @@ export default function Cart() {
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
+        {/* Back Button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mb-6 flex items-center gap-2"
+          onClick={handleBack} // use updated back handler
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back
+        </Button>
+
         <h1 className="font-display text-3xl md:text-4xl font-bold mb-8">
           Your <span className="text-gold">Cart</span>
         </h1>

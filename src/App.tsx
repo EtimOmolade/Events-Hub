@@ -17,9 +17,9 @@ import Bookings from "./pages/Bookings";
 import Categories from "./pages/Categories";
 import Vendors from "./pages/Vendors";
 import VendorDetail from "./pages/VendorDetail";
+import AIPlanner from "./pages/AIPlanner";
 import EventBuilder from "./pages/EventBuilder";
 import SavedPlans from "./pages/SavedPlans";
-import AIPlanner from "./pages/AIPlanner";
 import AdminLogin from "./pages/AdminLogin";
 import AdminServices from "./pages/admin/AdminServices";
 import AdminVendors from "./pages/admin/AdminVendors";
@@ -28,6 +28,7 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Account from "./pages/Account";
 import NotFound from "./pages/NotFound";
+import ReceiptView from "./pages/ReceiptView";
 
 const queryClient = new QueryClient();
 
@@ -51,9 +52,10 @@ const App = () => (
             <Route path="/categories" element={<Categories />} />
             <Route path="/vendors" element={<Vendors />} />
             <Route path="/vendor/:id" element={<VendorDetail />} />
+            <Route path="/ai-planner" element={<AIPlanner />} />
             <Route path="/event-builder" element={<EventBuilder />} />
             <Route path="/saved-plans" element={<SavedPlans />} />
-            <Route path="/ai-planner" element={<AIPlanner />} />
+            <Route path="/receipt/:id" element={<ReceiptView />} />
             <Route path="/admin" element={<AdminServices />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/services" element={<AdminServices />} />

@@ -14,6 +14,123 @@ export type Database = {
   }
   public: {
     Tables: {
+      booking_items: {
+        Row: {
+          booking_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          quantity: number | null
+          service_id: string | null
+          service_name: string
+          unit_price: number
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          quantity?: number | null
+          service_id?: string | null
+          service_name: string
+          unit_price: number
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          quantity?: number | null
+          service_id?: string | null
+          service_name?: string
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_items_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_items_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bookings: {
+        Row: {
+          budget: number | null
+          created_at: string
+          customer_email: string
+          customer_name: string
+          customer_phone: string | null
+          discount_amount: number | null
+          discount_code: string | null
+          event_date: string
+          event_type: string
+          guest_count: number | null
+          id: string
+          notes: string | null
+          service_fee: number | null
+          status: Database["public"]["Enums"]["booking_status"] | null
+          subtotal: number | null
+          total_amount: number
+          updated_at: string
+          user_id: string
+          vat_amount: number | null
+          venue: string | null
+        }
+        Insert: {
+          budget?: number | null
+          created_at?: string
+          customer_email: string
+          customer_name: string
+          customer_phone?: string | null
+          discount_amount?: number | null
+          discount_code?: string | null
+          event_date: string
+          event_type: string
+          guest_count?: number | null
+          id?: string
+          notes?: string | null
+          service_fee?: number | null
+          status?: Database["public"]["Enums"]["booking_status"] | null
+          subtotal?: number | null
+          total_amount?: number
+          updated_at?: string
+          user_id: string
+          vat_amount?: number | null
+          venue?: string | null
+        }
+        Update: {
+          budget?: number | null
+          created_at?: string
+          customer_email?: string
+          customer_name?: string
+          customer_phone?: string | null
+          discount_amount?: number | null
+          discount_code?: string | null
+          event_date?: string
+          event_type?: string
+          guest_count?: number | null
+          id?: string
+          notes?: string | null
+          service_fee?: number | null
+          status?: Database["public"]["Enums"]["booking_status"] | null
+          subtotal?: number | null
+          total_amount?: number
+          updated_at?: string
+          user_id?: string
+          vat_amount?: number | null
+          venue?: string | null
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string
@@ -22,7 +139,6 @@ export type Database = {
           id: string
           name: string
           slug: string
-          updated_at: string
         }
         Insert: {
           created_at?: string
@@ -31,7 +147,6 @@ export type Database = {
           id?: string
           name: string
           slug: string
-          updated_at?: string
         }
         Update: {
           created_at?: string
@@ -40,7 +155,45 @@ export type Database = {
           id?: string
           name?: string
           slug?: string
-          updated_at?: string
+        }
+        Relationships: []
+      }
+      discount_codes: {
+        Row: {
+          code: string
+          created_at: string
+          discount_type: Database["public"]["Enums"]["discount_type"]
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          max_uses: number | null
+          min_order: number | null
+          used_count: number | null
+          value: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          discount_type: Database["public"]["Enums"]["discount_type"]
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          min_order?: number | null
+          used_count?: number | null
+          value: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          discount_type?: Database["public"]["Enums"]["discount_type"]
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          min_order?: number | null
+          used_count?: number | null
+          value?: number
         }
         Relationships: []
       }
@@ -53,17 +206,15 @@ export type Database = {
           id: string
           phone: string | null
           updated_at: string
-          user_id: string
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
-          id?: string
+          id: string
           phone?: string | null
           updated_at?: string
-          user_id: string
         }
         Update: {
           avatar_url?: string | null
@@ -73,7 +224,134 @@ export type Database = {
           id?: string
           phone?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      receipts: {
+        Row: {
+          booking_id: string | null
+          created_at: string
+          currency: string
+          customer_email: string
+          customer_name: string
+          discount_amount: number
+          event_date: string
+          event_type: string
+          id: string
+          items: Json
+          payment_date: string
+          payment_method: string | null
+          payment_reference: string
+          receipt_number: string
+          service_fee: number
+          status: string
+          subtotal: number
+          total_amount: number
+          user_id: string
+          vat_amount: number
+          venue: string | null
+        }
+        Insert: {
+          booking_id?: string | null
+          created_at?: string
+          currency?: string
+          customer_email: string
+          customer_name: string
+          discount_amount?: number
+          event_date: string
+          event_type: string
+          id?: string
+          items?: Json
+          payment_date?: string
+          payment_method?: string | null
+          payment_reference: string
+          receipt_number: string
+          service_fee?: number
+          status?: string
+          subtotal?: number
+          total_amount: number
+          user_id: string
+          vat_amount?: number
+          venue?: string | null
+        }
+        Update: {
+          booking_id?: string | null
+          created_at?: string
+          currency?: string
+          customer_email?: string
+          customer_name?: string
+          discount_amount?: number
+          event_date?: string
+          event_type?: string
+          id?: string
+          items?: Json
+          payment_date?: string
+          payment_method?: string | null
+          payment_reference?: string
+          receipt_number?: string
+          service_fee?: number
+          status?: string
+          subtotal?: number
+          total_amount?: number
           user_id?: string
+          vat_amount?: number
+          venue?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receipts_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      saved_plans: {
+        Row: {
+          budget: string | null
+          color_palette: string | null
+          created_at: string
+          event_date: string | null
+          event_type: string
+          guest_size: string | null
+          id: string
+          name: string
+          packages: Json | null
+          theme: string | null
+          updated_at: string
+          user_id: string
+          venue_type: string | null
+        }
+        Insert: {
+          budget?: string | null
+          color_palette?: string | null
+          created_at?: string
+          event_date?: string | null
+          event_type: string
+          guest_size?: string | null
+          id?: string
+          name: string
+          packages?: Json | null
+          theme?: string | null
+          updated_at?: string
+          user_id: string
+          venue_type?: string | null
+        }
+        Update: {
+          budget?: string | null
+          color_palette?: string | null
+          created_at?: string
+          event_date?: string | null
+          event_type?: string
+          guest_size?: string | null
+          id?: string
+          name?: string
+          packages?: Json | null
+          theme?: string | null
+          updated_at?: string
+          user_id?: string
+          venue_type?: string | null
         }
         Relationships: []
       }
@@ -89,7 +367,7 @@ export type Database = {
           location: string | null
           name: string
           price: number
-          price_type: string | null
+          price_type: Database["public"]["Enums"]["price_type"] | null
           rating: number | null
           review_count: number | null
           short_description: string | null
@@ -106,8 +384,8 @@ export type Database = {
           images?: string[] | null
           location?: string | null
           name: string
-          price: number
-          price_type?: string | null
+          price?: number
+          price_type?: Database["public"]["Enums"]["price_type"] | null
           rating?: number | null
           review_count?: number | null
           short_description?: string | null
@@ -125,7 +403,7 @@ export type Database = {
           location?: string | null
           name?: string
           price?: number
-          price_type?: string | null
+          price_type?: Database["public"]["Enums"]["price_type"] | null
           rating?: number | null
           review_count?: number | null
           short_description?: string | null
@@ -170,50 +448,193 @@ export type Database = {
         }
         Relationships: []
       }
+      vendor_availability: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          is_available: boolean | null
+          slots: Json | null
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          is_available?: boolean | null
+          slots?: Json | null
+          vendor_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          is_available?: boolean | null
+          slots?: Json | null
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_availability_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_messages: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          read: boolean | null
+          sender_type: string
+          user_id: string
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          read?: boolean | null
+          sender_type: string
+          user_id: string
+          vendor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          read?: boolean | null
+          sender_type?: string
+          user_id?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_messages_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_portfolio: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          image_url: string
+          title: string | null
+          vendor_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          image_url: string
+          title?: string | null
+          vendor_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string
+          title?: string | null
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_portfolio_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendors: {
         Row: {
-          active: boolean | null
           avatar: string | null
           bio: string | null
           created_at: string
+          email: string | null
           id: string
           location: string | null
           name: string
           rating: number | null
           review_count: number | null
-          specialty: string | null
+          specialty: string
+          status: Database["public"]["Enums"]["vendor_status"] | null
           updated_at: string
+          user_id: string | null
           verified: boolean | null
         }
         Insert: {
-          active?: boolean | null
           avatar?: string | null
           bio?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           location?: string | null
           name: string
           rating?: number | null
           review_count?: number | null
-          specialty?: string | null
+          specialty: string
+          status?: Database["public"]["Enums"]["vendor_status"] | null
           updated_at?: string
+          user_id?: string | null
           verified?: boolean | null
         }
         Update: {
-          active?: boolean | null
           avatar?: string | null
           bio?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           location?: string | null
           name?: string
           rating?: number | null
           review_count?: number | null
-          specialty?: string | null
+          specialty?: string
+          status?: Database["public"]["Enums"]["vendor_status"] | null
           updated_at?: string
+          user_id?: string | null
           verified?: boolean | null
         }
         Relationships: []
+      }
+      wishlists: {
+        Row: {
+          created_at: string
+          id: string
+          service_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          service_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          service_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wishlists_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -229,7 +650,16 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
+      app_role: "user" | "vendor" | "admin"
+      booking_status:
+        | "pending"
+        | "confirmed"
+        | "in_progress"
+        | "completed"
+        | "cancelled"
+      discount_type: "percentage" | "fixed"
+      price_type: "fixed" | "starting" | "hourly"
+      vendor_status: "pending" | "approved" | "suspended"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -357,7 +787,17 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user"],
+      app_role: ["user", "vendor", "admin"],
+      booking_status: [
+        "pending",
+        "confirmed",
+        "in_progress",
+        "completed",
+        "cancelled",
+      ],
+      discount_type: ["percentage", "fixed"],
+      price_type: ["fixed", "starting", "hourly"],
+      vendor_status: ["pending", "approved", "suspended"],
     },
   },
 } as const

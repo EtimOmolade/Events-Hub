@@ -86,7 +86,7 @@ export default function Bookings() {
           <ArrowLeft className="w-4 h-4" />
           Back
         </Button>
-        
+
         <h1 className="font-display text-3xl md:text-4xl font-bold mb-8">
           My <span className="text-gold">Bookings</span>
         </h1>

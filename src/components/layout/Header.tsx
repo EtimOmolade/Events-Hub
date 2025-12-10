@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, ShoppingBag, Heart, User, Menu, X, Sparkles } from 'lucide-react';
+import { Search, ShoppingBag, Heart, User, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useStore } from '@/store/useStore';
 import { useAuth } from '@/hooks/useAuth';
@@ -16,18 +16,6 @@ export function Header() {
   const { isAuthenticated } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
-
-  // Prevent body scroll when mobile menu is open
-  useEffect(() => {
-    if (isMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isMenuOpen]);
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -53,17 +41,15 @@ export function Header() {
             <Link to="/services" className={`transition-colors ${isActive('/services') ? 'text-gold font-medium' : 'text-foreground/80 hover:text-gold'}`}>
               Services
             </Link>
-           
             <Link to="/event-builder" className={`transition-colors ${isActive('/event-builder') ? 'text-gold font-medium' : 'text-foreground/80 hover:text-gold'}`}>
               Event Builder
             </Link>
             <Link to="/vendors" className={`transition-colors ${isActive('/vendors') ? 'text-gold font-medium' : 'text-foreground/80 hover:text-gold'}`}>
               Vendors
             </Link>
-             <Link to="/bookings" className={`transition-colors ${isActive('/services') ? 'text-gold font-medium' : 'text-foreground/80 hover:text-gold'}`}>
+            <Link to="/bookings" className={`transition-colors ${isActive('/bookings') ? 'text-gold font-medium' : 'text-foreground/80 hover:text-gold'}`}>
               Bookings
             </Link>
-            
           </nav>
 
           {/* Desktop Actions */}
@@ -115,8 +101,10 @@ export function Header() {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="flex md:hidden items-center gap-2">
+          {/* ----------------------------- */}
+          {/* 📱 MOBILE BUTTONS + DROPDOWN */}
+          {/* ----------------------------- */}
+          <div className="flex md:hidden items-center gap-2 relative">
             <Link to="/cart">
               <Button variant="ghost" size="icon" className="relative">
                 <ShoppingBag className="h-5 w-5" />
@@ -127,112 +115,74 @@ export function Header() {
                 )}
               </Button>
             </Link>
-            <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(true)}>
-              <Menu className="h-6 w-6" />
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </Button>
+
+            {/* 📌 MOBILE DROPDOWN MENU */}
+            <AnimatePresence>
+              {isMenuOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.25 }}
+                  className="absolute top-14 right-0 w-56 bg-background border border-border rounded-xl shadow-xl p-3 z-[100]"
+                >
+                  <nav className="flex flex-col gap-1">
+                    {[
+                      { to: '/', label: 'Home' },
+                      { to: '/services', label: 'Services' },
+                      { to: '/event-builder', label: 'Event Builder' },
+                      { to: '/vendors', label: 'Vendors' },
+                      { to: '/bookings', label: 'Bookings' },
+                      { to: '/wishlist', label: 'Wishlist' },
+                    ].map((item) => (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        onClick={() => setIsMenuOpen(false)}
+                        className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+                          isActive(item.to)
+                            ? 'bg-gold/20 text-gold'
+                            : 'text-foreground/80 hover:bg-muted hover:text-gold'
+                        }`}
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
+                  </nav>
+
+                  <div className="mt-3 pt-3 border-t border-border">
+                    {isAuthenticated ? (
+                      <Link to="/account" onClick={() => setIsMenuOpen(false)}>
+                        <Button variant="gold" size="sm" className="w-full">
+                          <User className="h-4 w-4" />
+                          Account
+                        </Button>
+                      </Link>
+                    ) : (
+                      <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
+                        <Button variant="gold" size="sm" className="w-full">
+                          Sign In
+                        </Button>
+                      </Link>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </div>
 
       {/* Smart Search Overlay */}
       <SmartSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
-
-      {/* Mobile Menu Backdrop */}
-      <AnimatePresence>
-        {isMenuOpen && (
-          <>
-            {/* Dark overlay backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] md:hidden"
-              onClick={() => setIsMenuOpen(false)}
-            />
-            {/* Menu panel */}
-            <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed inset-y-0 right-0 w-full max-w-sm bg-background shadow-2xl border-l border-border z-[101] md:hidden overflow-y-auto"
-            >
-              <div className="flex flex-col h-full p-6">
-                <div className="flex items-center justify-between mb-8">
-                  <Link to="/" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-2">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gold to-gold-light flex items-center justify-center">
-                      <span className="text-rich-black font-display font-bold text-lg">E</span>
-                    </div>
-                    <span className="font-display text-xl font-semibold">
-                      Events<span className="text-gold">Hub</span>
-                    </span>
-                  </Link>
-                  <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(false)} className="touch-manipulation">
-                    <X className="h-6 w-6" />
-                  </Button>
-                </div>
-
-                {/* Search in mobile menu */}
-                <Button
-                  variant="outline"
-                  className="w-full justify-start mb-6 text-muted-foreground touch-manipulation"
-                  onClick={() => { setIsMenuOpen(false); setIsSearchOpen(true); }}
-                >
-                  <Search className="h-4 w-4 mr-2" />
-                  Search services...
-                </Button>
-
-                <nav className="flex flex-col gap-1 flex-1">
-                  {[
-                    { to: '/', label: 'Home' },
-                    { to: '/ai-planner', label: '✨ AI Planner', highlight: true },
-                    { to: '/services', label: 'Services' },
-                    { to: '/event-builder', label: 'Event Builder' },
-                    { to: '/categories', label: 'Categories' },
-                    { to: '/vendors', label: 'Vendors' },
-                    { to: '/wishlist', label: 'Wishlist' },
-                    { to: '/saved-plans', label: 'Saved Plans' },
-                    { to: '/bookings', label: 'My Bookings' },
-                  ].map((item) => (
-                    <Link
-                      key={item.to}
-                      to={item.to}
-                      onClick={() => setIsMenuOpen(false)}
-                      className={`text-lg font-medium py-3 px-4 rounded-lg transition-colors touch-manipulation active:scale-[0.98] ${
-                        isActive(item.to)
-                          ? 'bg-gold/20 text-gold'
-                          : item.highlight
-                            ? 'text-gold hover:bg-gold/10 active:bg-gold/20'
-                            : 'text-foreground hover:text-gold hover:bg-muted active:bg-muted/80'
-                      }`}
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
-                </nav>
-
-                <div className="pt-6 border-t border-border">
-                  {isAuthenticated ? (
-                    <Link to="/account" onClick={() => setIsMenuOpen(false)} className="w-full">
-                      <Button variant="gold" className="w-full touch-manipulation" size="lg">
-                        <User className="h-5 w-5" />
-                        My Account
-                      </Button>
-                    </Link>
-                  ) : (
-                    <Link to="/auth" onClick={() => setIsMenuOpen(false)} className="w-full">
-                      <Button variant="gold" className="w-full touch-manipulation" size="lg">
-                        Sign In / Register
-                      </Button>
-                    </Link>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
     </header>
   );
 }

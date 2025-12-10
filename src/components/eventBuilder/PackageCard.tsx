@@ -27,11 +27,12 @@ export function PackageCard({ pkg, isSelected, onSelect, onAddToCart, index }: P
 
   return (
     <motion.div
+      onClick={onSelect}
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
       className={cn(
-        "relative rounded-2xl border-2 overflow-hidden transition-all duration-300",
+        "relative rounded-2xl border-2 overflow-hidden transition-all duration-300 cursor-pointer",
         isSelected 
           ? "border-gold shadow-gold ring-2 ring-gold/20" 
           : "border-border hover:border-gold/50 hover:shadow-lg",
@@ -45,6 +46,17 @@ export function PackageCard({ pkg, isSelected, onSelect, onAddToCart, index }: P
       )}>
         {tierLabels[pkg.tier]}
       </div>
+
+      {/* Selected Checkmark Badge */}
+      {isSelected && (
+        <motion.div
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="absolute top-3 left-3 bg-gold text-rich-black rounded-full p-1 shadow-lg z-10"
+        >
+          <CheckCircle className="w-5 h-5" />
+        </motion.div>
+      )}
 
       <div className="p-6">
         {/* Header */}
@@ -116,7 +128,7 @@ export function PackageCard({ pkg, isSelected, onSelect, onAddToCart, index }: P
             className="w-full"
             onClick={onSelect}
           >
-            {isSelected ? 'Selected for Comparison' : 'Select for Comparison'}
+            {isSelected ? 'Selected' : 'Select Package'}
           </Button>
           <Button
             variant="gold"

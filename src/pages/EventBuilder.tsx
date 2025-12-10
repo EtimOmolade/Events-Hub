@@ -1,460 +1,305 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Sparkles, Save, Scale, Wand2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Sparkles, ShoppingCart } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
-import { EventBuilderProgress } from '@/components/eventBuilder/EventBuilderProgress';
 import { StepEventType } from '@/components/eventBuilder/StepEventType';
 import { StepTheme } from '@/components/eventBuilder/StepTheme';
 import { StepGuests } from '@/components/eventBuilder/StepGuests';
 import { StepBudget } from '@/components/eventBuilder/StepBudget';
 import { PackageCard } from '@/components/eventBuilder/PackageCard';
-import { PackageComparison } from '@/components/eventBuilder/PackageComparison';
-import { 
-  generateEventPackages, 
-  GeneratedPackage,
-  eventTypeCategories,
-  eventThemes,
-  colorPalettes,
-  guestSizeRanges,
-  venueTypes,
-  budgetRanges,
-} from '@/data/eventBuilder';
+import { generateEventPackages, GeneratedPackage } from '@/data/eventBuilder';
 import { useStore } from '@/store/useStore';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 const STEPS = [
   { id: 1, title: 'Event Type', description: 'What are you celebrating?' },
-  { id: 2, title: 'Theme & Colors', description: 'Choose your style' },
-  { id: 3, title: 'Guests & Venue', description: 'Size and location' },
+  { id: 2, title: 'Theme & Style', description: 'Choose your aesthetic' },
+  { id: 3, title: 'Guest Count', description: 'How many people?' },
   { id: 4, title: 'Budget', description: 'Set your budget' },
-  { id: 5, title: 'Your Packages', description: 'Review and select' },
+  { id: 5, title: 'Packages', description: 'Review recommendations' },
 ];
+
+interface BuilderState {
+  eventType: string | null;
+  theme: string | null;
+  colorPalette: string | null;
+  guestSize: string | null;
+  venueType: string | null;
+  budget: string | null;
+}
+
+const initialState: BuilderState = {
+  eventType: null,
+  theme: null,
+  colorPalette: null,
+  guestSize: null,
+  venueType: null,
+  budget: null,
+};
 
 export default function EventBuilder() {
   const navigate = useNavigate();
-  const { addToCart, addSavedPlan, isAuthenticated, aiRecommendation, setAIRecommendation } = useStore();
-  
+  const { addToCart } = useStore();
   const [currentStep, setCurrentStep] = useState(1);
-  const [eventType, setEventType] = useState<string | null>(null);
-  const [theme, setTheme] = useState<string | null>(null);
-  const [colorPalette, setColorPalette] = useState<string | null>(null);
-  const [guestSize, setGuestSize] = useState<string | null>(null);
-  const [venueType, setVenueType] = useState<string | null>(null);
-  const [budget, setBudget] = useState<string | null>(null);
-  const [generatedPackages, setGeneratedPackages] = useState<GeneratedPackage[]>([]);
-  const [selectedForComparison, setSelectedForComparison] = useState<string[]>([]);
-  const [showComparison, setShowComparison] = useState(false);
-  const [showAIBanner, setShowAIBanner] = useState(false);
-
-  // Check for AI recommendations on mount
-  useEffect(() => {
-    if (aiRecommendation) {
-      setShowAIBanner(true);
-    }
-  }, []);
-
-  // Apply AI recommendations
-  const applyAIRecommendations = () => {
-    if (!aiRecommendation) return;
-    
-    let applied = [];
-    
-    if (aiRecommendation.eventType) {
-      setEventType(aiRecommendation.eventType);
-      applied.push('Event Type');
-    }
-    if (aiRecommendation.theme) {
-      setTheme(aiRecommendation.theme);
-      applied.push('Theme');
-    }
-    if (aiRecommendation.colorPalette) {
-      setColorPalette(aiRecommendation.colorPalette);
-      applied.push('Colors');
-    }
-    if (aiRecommendation.guestSize) {
-      setGuestSize(aiRecommendation.guestSize);
-      applied.push('Guest Size');
-    }
-    if (aiRecommendation.venueType) {
-      setVenueType(aiRecommendation.venueType);
-      applied.push('Venue');
-    }
-    if (aiRecommendation.budget) {
-      setBudget(aiRecommendation.budget);
-      applied.push('Budget');
-    }
-
-    setShowAIBanner(false);
-    setAIRecommendation(null);
-    
-    toast.success('AI preferences applied!', {
-      description: `Applied: ${applied.join(', ')}`,
-    });
-  };
-
-  const dismissAIBanner = () => {
-    setShowAIBanner(false);
-    setAIRecommendation(null);
-  };
+  const [state, setState] = useState<BuilderState>(initialState);
+  const [packages, setPackages] = useState<GeneratedPackage[]>([]);
+  const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
 
   const canProceed = () => {
     switch (currentStep) {
-      case 1: return eventType !== null;
-      case 2: return theme !== null && colorPalette !== null;
-      case 3: return guestSize !== null && venueType !== null;
-      case 4: return budget !== null;
+      case 1: return !!state.eventType;
+      case 2: return !!state.theme && !!state.colorPalette;
+      case 3: return !!state.guestSize && !!state.venueType;
+      case 4: return !!state.budget;
       default: return true;
     }
   };
 
   const handleNext = () => {
-    if (currentStep === 4) {
-      // Generate packages
-      const packages = generateEventPackages(
-        eventType!,
-        theme!,
-        colorPalette!,
-        guestSize!,
-        venueType!,
-        budget!
-      );
-      setGeneratedPackages(packages);
-    }
-    setCurrentStep((prev) => Math.min(prev + 1, STEPS.length));
-  };
-
-  const handleBack = () => {
-    setCurrentStep((prev) => Math.max(prev - 1, 1));
-  };
-
-  const handleSelectForComparison = (pkgId: string) => {
-    setSelectedForComparison((prev) => {
-      if (prev.includes(pkgId)) {
-        return prev.filter((id) => id !== pkgId);
-      }
-      if (prev.length >= 3) {
-        toast.info('You can compare up to 3 packages at a time');
-        return prev;
-      }
-      return [...prev, pkgId];
-    });
-  };
-
-  const handleAddPackageToCart = (pkg: GeneratedPackage) => {
-    pkg.services.forEach((service) => {
-      addToCart(service, 1);
-    });
-    toast.success(`${pkg.name} added to cart!`, {
-      description: `${pkg.services.length} services added`,
-    });
-  };
-
-  const handleSavePlan = () => {
-    if (!isAuthenticated) {
-      toast.error('Please sign in to save your event plan');
-      navigate('/auth');
+    if (!canProceed()) {
+      toast.error('Please complete this step before continuing');
       return;
     }
 
-    const plan = {
-      id: `plan-${Date.now()}`,
-      name: `${eventTypeCategories.find(e => e.id === eventType)?.name} Plan`,
-      eventType: eventType!,
-      theme: theme!,
-      colorPalette: colorPalette!,
-      guestSize: guestSize!,
-      venueType: venueType!,
-      budget: budget!,
-      createdAt: new Date().toISOString(),
-      packages: generatedPackages,
-    };
+    if (currentStep === 4) {
+      const generatedPackages = generateEventPackages(
+        state.eventType!,
+        state.theme!,
+        state.colorPalette!,
+        state.guestSize!,
+        state.venueType!,
+        state.budget!
+      );
+      setPackages(generatedPackages);
+    }
 
-    addSavedPlan(plan);
-    toast.success('Event plan saved!', {
-      description: 'View your saved plans in your account',
-    });
+    if (currentStep < STEPS.length) {
+      setCurrentStep(prev => prev + 1);
+    }
   };
 
-  const comparisonPackages = generatedPackages.filter((pkg) =>
-    selectedForComparison.includes(pkg.id)
-  );
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep(prev => prev - 1);
+    } else {
+      navigate('/account');
+    }
+  };
 
-  // Summary Info
-  const getSummaryInfo = () => {
-    const eventInfo = eventTypeCategories.find((e) => e.id === eventType);
-    const themeInfo = eventThemes.find((t) => t.id === theme);
-    const paletteInfo = colorPalettes.find((p) => p.id === colorPalette);
-    const guestInfo = guestSizeRanges.find((g) => g.id === guestSize);
-    const venueInfo = venueTypes.find((v) => v.id === venueType);
-    const budgetInfo = budgetRanges.find((b) => b.id === budget);
+  const handleReset = () => {
+    setState(initialState);
+    setPackages([]);
+    setSelectedPackageId(null);
+    setCurrentStep(1);
+    toast.success('Builder reset successfully');
+  };
 
-    return { eventInfo, themeInfo, paletteInfo, guestInfo, venueInfo, budgetInfo };
+  const handleAddToCart = (pkg: GeneratedPackage) => {
+    pkg.services.forEach(service => addToCart(service));
+    toast.success(`${pkg.name} added to cart!`);
+  };
+
+  const updateState = <K extends keyof BuilderState>(key: K, value: BuilderState[K]) => {
+    setState(prev => ({ ...prev, [key]: value }));
+  };
+
+  const renderStep = () => {
+    switch (currentStep) {
+      case 1:
+        return <StepEventType selected={state.eventType} onSelect={(id) => updateState('eventType', id)} />;
+      case 2:
+        return (
+          <StepTheme
+            selectedTheme={state.theme}
+            selectedPalette={state.colorPalette}
+            onSelectTheme={(id) => updateState('theme', id)}
+            onSelectPalette={(id) => updateState('colorPalette', id)}
+          />
+        );
+      case 3:
+        return (
+          <StepGuests
+            selectedSize={state.guestSize}
+            selectedVenue={state.venueType}
+            onSelectSize={(id) => updateState('guestSize', id)}
+            onSelectVenue={(id) => updateState('venueType', id)}
+          />
+        );
+      case 4:
+        return <StepBudget selected={state.budget} onSelect={(id) => updateState('budget', id)} />;
+      case 5:
+        return (
+          <div className="space-y-6">
+            <div className="text-center">
+              <h2 className="font-display text-2xl md:text-3xl font-semibold mb-2">
+                Your Recommended Packages
+              </h2>
+              <p className="text-muted-foreground">
+                Based on your preferences, here are our top picks
+              </p>
+            </div>
+
+            {packages.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">No packages found for your criteria. Try adjusting your selections.</p>
+                <Button variant="outline" onClick={handleReset} className="mt-4">
+                  Start Over
+                </Button>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {packages.map((pkg, index) => (
+                    <motion.div
+                      key={pkg.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                    >
+                      <PackageCard
+                        pkg={pkg}
+                        isSelected={selectedPackageId === pkg.id}
+                        onSelect={() => setSelectedPackageId(pkg.id)}
+                        onAddToCart={() => handleAddToCart(pkg)}
+                        index={index}
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+
+                <div className="flex justify-center gap-4 pt-6">
+                  <Button variant="outline" onClick={handleReset}>Start New Plan</Button>
+                  <Button variant="gold" onClick={() => navigate('/cart')}>
+                    <ShoppingCart className="w-4 h-4 mr-2" />
+                    View Cart
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        );
+      default:
+        return null;
+    }
   };
 
   return (
     <Layout>
-      <div className="min-h-screen py-8 bg-gradient-to-b from-secondary/50 to-background">
-        <div className="container mx-auto px-4">
-          {/* Back to Previous Page Button */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="mb-4"
-          >
-            <Button
-              variant="ghost"
-              onClick={() => navigate(-1)}
-              className="gap-2 text-muted-foreground hover:text-foreground"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30">
+        <div className="container mx-auto px-4 py-6">
+          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+            <Button variant="ghost" size="sm" onClick={() => navigate('/account')} className="mb-4">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Account
             </Button>
-          </motion.div>
 
-          {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-8"
-          >
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-gold/10 rounded-full text-gold text-sm font-medium mb-4">
-              <Sparkles className="w-4 h-4" />
-              AI-Powered Event Builder
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gold to-gold-light flex items-center justify-center">
+                <Sparkles className="w-6 h-6 text-rich-black" />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-display font-bold">Event Builder</h1>
+                <p className="text-muted-foreground text-sm">Build your perfect event step by step</p>
+              </div>
             </div>
-            <h1 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
-              Build Your Perfect Event
-            </h1>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Tell us about your dream event and we'll create personalized package recommendations just for you
-            </p>
+
+            {/* Progress */}
+            <div className="w-full py-6">
+              <div className="flex items-center justify-between relative">
+                <div className="absolute top-5 left-0 right-0 h-0.5 bg-border -z-10" />
+                <motion.div 
+                  className="absolute top-5 left-0 h-0.5 bg-gold -z-10"
+                  initial={{ width: '0%' }}
+                  animate={{ width: `${((currentStep - 1) / (STEPS.length - 1)) * 100}%` }}
+                  transition={{ duration: 0.3 }}
+                />
+
+                {STEPS.map((step) => {
+                  const isCompleted = currentStep > step.id;
+                  const isCurrent = currentStep === step.id;
+
+                  return (
+                    <div key={step.id} className="flex flex-col items-center gap-2">
+                      <motion.button
+                        onClick={() => { if (step.id < currentStep) setCurrentStep(step.id); }}
+                        disabled={step.id > currentStep}
+                        className={cn(
+                          "w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-colors",
+                          isCompleted && "bg-gold text-rich-black cursor-pointer",
+                          isCurrent && "bg-gold/20 border-2 border-gold text-gold",
+                          !isCompleted && !isCurrent && "bg-muted text-muted-foreground cursor-not-allowed"
+                        )}
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ delay: step.id * 0.1 }}
+                      >
+                        {isCompleted ? <Check className="w-5 h-5" /> : step.id}
+                      </motion.button>
+                      <div className="text-center hidden md:block">
+                        <p className={cn("text-sm font-medium", isCurrent ? "text-gold" : "text-muted-foreground")}>{step.title}</p>
+                        <p className="text-xs text-muted-foreground hidden lg:block">{step.description}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="mt-4 text-center md:hidden">
+                <p className="text-sm font-medium text-gold">
+                  Step {currentStep}: {STEPS[currentStep - 1]?.title}
+                </p>
+                <p className="text-xs text-muted-foreground">{STEPS[currentStep - 1]?.description}</p>
+              </div>
+            </div>
           </motion.div>
 
-          {/* AI Recommendations Banner */}
-          <AnimatePresence>
-            {showAIBanner && aiRecommendation && (
-              <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="mb-6 p-4 bg-gradient-to-r from-gold/10 to-gold-light/10 border border-gold/30 rounded-xl"
-              >
-                <div className="flex items-center justify-between flex-wrap gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center">
-                      <Wand2 className="w-5 h-5 text-gold" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-sm">AI Recommendations Ready</h3>
-                      <p className="text-xs text-muted-foreground">
-                        Based on your conversation, we've prepared some suggestions
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" onClick={dismissAIBanner}>
-                      Dismiss
-                    </Button>
-                    <Button variant="gold" size="sm" onClick={applyAIRecommendations} className="gap-2">
-                      <Wand2 className="w-4 h-4" />
-                      Apply Suggestions
-                    </Button>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Progress */}
-          <EventBuilderProgress steps={STEPS} currentStep={currentStep} />
-
-          {/* Step Content */}
-          <div className="max-w-5xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="bg-card rounded-2xl border border-border shadow-lg p-6 md:p-8 min-h-[400px]"
+          >
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentStep}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-                className="py-8"
+                transition={{ duration: 0.2 }}
               >
-                {currentStep === 1 && (
-                  <StepEventType selected={eventType} onSelect={setEventType} />
-                )}
-                {currentStep === 2 && (
-                  <StepTheme
-                    selectedTheme={theme}
-                    selectedPalette={colorPalette}
-                    onSelectTheme={setTheme}
-                    onSelectPalette={setColorPalette}
-                  />
-                )}
-                {currentStep === 3 && (
-                  <StepGuests
-                    selectedSize={guestSize}
-                    selectedVenue={venueType}
-                    onSelectSize={setGuestSize}
-                    onSelectVenue={setVenueType}
-                  />
-                )}
-                {currentStep === 4 && (
-                  <StepBudget selected={budget} onSelect={setBudget} />
-                )}
-                {currentStep === 5 && (
-                  <div className="space-y-8">
-                    {/* Summary */}
-                    <div className="text-center">
-                      <h2 className="font-display text-2xl md:text-3xl font-semibold mb-2">
-                        Your Recommended Packages
-                      </h2>
-                      <p className="text-muted-foreground">
-                        Based on your preferences, here are our top picks
-                      </p>
-                    </div>
-
-                    {/* Selection Summary */}
-                    {(() => {
-                      const { eventInfo, themeInfo, paletteInfo, guestInfo, venueInfo, budgetInfo } = getSummaryInfo();
-                      return (
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className="flex flex-wrap items-center justify-center gap-3"
-                        >
-                          {[
-                            { icon: eventInfo?.icon, label: eventInfo?.name },
-                            { icon: themeInfo?.icon, label: themeInfo?.name },
-                            { icon: '🎨', label: paletteInfo?.name },
-                            { icon: '👥', label: guestInfo?.range },
-                            { icon: venueInfo?.icon, label: venueInfo?.name },
-                            { icon: '💰', label: budgetInfo?.range },
-                          ].map((item, i) => (
-                            <span
-                              key={i}
-                              className="inline-flex items-center gap-2 px-3 py-1.5 bg-card border border-border rounded-full text-sm"
-                            >
-                              <span>{item.icon}</span>
-                              <span className="text-muted-foreground">{item.label}</span>
-                            </span>
-                          ))}
-                        </motion.div>
-                      );
-                    })()}
-
-                    {/* Action Buttons */}
-                    <div className="flex flex-wrap items-center justify-center gap-4">
-                      <Button
-                        variant="outline"
-                        onClick={handleSavePlan}
-                        className="gap-2"
-                      >
-                        <Save className="w-4 h-4" />
-                        Save Plan
-                      </Button>
-                      {selectedForComparison.length >= 2 && (
-                        <Button
-                          variant="gold"
-                          onClick={() => setShowComparison(true)}
-                          className="gap-2"
-                        >
-                          <Scale className="w-4 h-4" />
-                          Compare ({selectedForComparison.length})
-                        </Button>
-                      )}
-                    </div>
-
-                    {/* Package Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {generatedPackages.map((pkg, index) => (
-                        <PackageCard
-                          key={pkg.id}
-                          pkg={pkg}
-                          isSelected={selectedForComparison.includes(pkg.id)}
-                          onSelect={() => handleSelectForComparison(pkg.id)}
-                          onAddToCart={() => handleAddPackageToCart(pkg)}
-                          index={index}
-                        />
-                      ))}
-                    </div>
-
-                    {generatedPackages.length === 0 && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="text-center py-12"
-                      >
-                        <p className="text-muted-foreground">
-                          No packages found for your criteria. Try adjusting your budget or guest size.
-                        </p>
-                        <Button
-                          variant="outline"
-                          className="mt-4"
-                          onClick={() => setCurrentStep(4)}
-                        >
-                          Adjust Budget
-                        </Button>
-                      </motion.div>
-                    )}
-                  </div>
-                )}
+                {renderStep()}
               </motion.div>
             </AnimatePresence>
+          </motion.div>
 
-            {/* Navigation Buttons */}
-            <div className="flex items-center justify-between pt-8 border-t border-border">
-              <Button
-                variant="ghost"
-                onClick={handleBack}
-                disabled={currentStep === 1}
-                className="gap-2"
-              >
+          {currentStep < 5 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="flex justify-between mt-6"
+            >
+              <Button variant="outline" onClick={handleBack} className="gap-2">
                 <ArrowLeft className="w-4 h-4" />
-                Back
+                {currentStep === 1 ? 'Cancel' : 'Back'}
               </Button>
 
-              {currentStep < 5 && (
-                <Button
-                  variant="gold"
-                  onClick={handleNext}
-                  disabled={!canProceed()}
-                  className="gap-2"
-                >
-                  {currentStep === 4 ? 'Generate Packages' : 'Continue'}
+              <Button variant="gold" onClick={handleNext} disabled={!canProceed()} className="gap-2">
+                {currentStep === 4 ? <>
+                  Generate Packages
+                  <Check className="w-4 h-4" />
+                </> : <>
+                  Continue
                   <ArrowRight className="w-4 h-4" />
-                </Button>
-              )}
-
-              {currentStep === 5 && (
-                <Button
-                  variant="gold"
-                  onClick={() => navigate('/cart')}
-                  className="gap-2"
-                >
-                  View Cart
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-          </div>
+                </>}
+              </Button>
+            </motion.div>
+          )}
         </div>
       </div>
-
-      {/* Comparison Modal */}
-      <AnimatePresence>
-        {showComparison && comparisonPackages.length >= 2 && (
-          <PackageComparison
-            packages={comparisonPackages}
-            onClose={() => setShowComparison(false)}
-            onAddToCart={(pkg) => {
-              handleAddPackageToCart(pkg);
-              setShowComparison(false);
-            }}
-          />
-        )}
-      </AnimatePresence>
     </Layout>
   );
 }

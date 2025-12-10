@@ -1,16 +1,14 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from './useAuth';
-import { supabase } from '@/integrations/supabase/client';
 
 export interface Profile {
   id: string;
-  user_id: string;
   full_name: string | null;
   email: string | null;
   avatar_url: string | null;
   phone: string | null;
-  created_at: string;
-  updated_at: string;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 export function useProfile() {
@@ -25,46 +23,16 @@ export function useProfile() {
       return;
     }
 
-    setIsLoading(true);
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (error) {
-      console.error('Error fetching profile:', error);
-      // Fallback to auth user data if profile doesn't exist yet
-      setProfile({
-        id: user.id,
-        user_id: user.id,
-        full_name: user.user_metadata?.full_name || null,
-        email: user.email || null,
-        avatar_url: user.user_metadata?.avatar_url || null,
-        phone: user.phone || null,
-        created_at: user.created_at,
-        updated_at: new Date().toISOString(),
-      });
-    } else if (data) {
-      setProfile(data);
-    } else {
-      // Profile doesn't exist, create one
-      const { data: newProfile, error: insertError } = await supabase
-        .from('profiles')
-        .insert({
-          user_id: user.id,
-          email: user.email,
-          full_name: user.user_metadata?.full_name || null,
-        })
-        .select()
-        .single();
-
-      if (insertError) {
-        console.error('Error creating profile:', insertError);
-      } else {
-        setProfile(newProfile);
-      }
-    }
+    // Use auth user data directly (no profiles table in database)
+    setProfile({
+      id: user.id,
+      full_name: user.user_metadata?.full_name || null,
+      email: user.email || null,
+      avatar_url: user.user_metadata?.avatar_url || null,
+      phone: user.phone || null,
+      created_at: user.created_at,
+      updated_at: new Date().toISOString(),
+    });
     setIsLoading(false);
   }, [user]);
 
@@ -77,23 +45,12 @@ export function useProfile() {
     }
   }, [isAuthenticated, user, fetchProfile]);
 
-  const updateProfile = async (updates: Partial<Omit<Profile, 'id' | 'user_id' | 'created_at' | 'updated_at'>>) => {
+  const updateProfile = async (updates: Partial<Omit<Profile, 'id' | 'created_at' | 'updated_at'>>) => {
     if (!user) return { error: { message: 'Not authenticated' } };
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .update(updates)
-      .eq('user_id', user.id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error updating profile:', error);
-      return { data: null, error };
-    }
-
-    setProfile(data);
-    return { data, error: null };
+    // For now, just update local state (no profiles table)
+    setProfile(prev => prev ? { ...prev, ...updates, updated_at: new Date().toISOString() } : null);
+    return { data: profile, error: null };
   };
 
   return {
