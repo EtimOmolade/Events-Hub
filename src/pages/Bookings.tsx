@@ -5,6 +5,7 @@ import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useStore, Booking } from '@/store/useStore';
+import { useAuth } from '@/hooks/useAuth';
 import { formatPrice } from '@/data/services';
 import { format } from 'date-fns';
 
@@ -26,7 +27,8 @@ const statusLabels: Record<Booking['status'], string> = {
 
 export default function Bookings() {
   const navigate = useNavigate();
-  const { bookings, isAuthenticated } = useStore();
+  const { bookings } = useStore();
+  const { isAuthenticated } = useAuth();
 
   if (!isAuthenticated) {
     return (
