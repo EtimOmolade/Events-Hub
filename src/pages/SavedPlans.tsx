@@ -9,23 +9,24 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
-interface AIPlan {
+interface SavedPlan {
   id: string;
-  raw_query: string;
-  ai_summary: string | null;
-  event_type: string | null;
+  name: string;
+  event_type: string;
   theme: string | null;
   color_palette: string | null;
-  guest_count: number | null;
+  guest_size: string | null;
   venue_type: string | null;
-  budget_range: string | null;
+  budget: string | null;
+  event_date: string | null;
+  packages: any[] | null;
   created_at: string;
 }
 
 export default function SavedPlans() {
   const navigate = useNavigate();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const [plans, setPlans] = useState<AIPlan[]>([]);
+  const [plans, setPlans] = useState<SavedPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -39,7 +40,7 @@ export default function SavedPlans() {
     
     setIsLoading(true);
     const { data, error } = await supabase
-      .from('ai_plans')
+      .from('saved_plans')
       .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
@@ -56,7 +57,7 @@ export default function SavedPlans() {
 
   const handleRemovePlan = async (planId: string) => {
     const { error } = await supabase
-      .from('ai_plans')
+      .from('saved_plans')
       .delete()
       .eq('id', planId);
 
@@ -129,13 +130,13 @@ export default function SavedPlans() {
                 Saved Event Plans
               </h1>
               <p className="text-muted-foreground">
-                Your saved AI planning conversations
+                Your saved event planning configurations
               </p>
             </div>
-            <Link to="/ai-planner">
+            <Link to="/event-builder">
               <Button variant="gold" className="gap-2">
                 <Sparkles className="w-4 h-4" />
-                New AI Plan
+                New Event Plan
               </Button>
             </Link>
           </motion.div>
@@ -155,9 +156,9 @@ export default function SavedPlans() {
                 No saved plans yet
               </h2>
               <p className="text-muted-foreground mb-6">
-                Use our AI Planner to create and save your event plans
+                Use our Event Builder to create and save your event plans
               </p>
-              <Link to="/ai-planner">
+              <Link to="/event-builder">
                 <Button variant="gold" className="gap-2">
                   <Sparkles className="w-4 h-4" />
                   Start Planning
@@ -179,7 +180,7 @@ export default function SavedPlans() {
                     <div className="flex items-start justify-between">
                       <div>
                         <h3 className="font-display text-xl font-semibold mb-1 line-clamp-1">
-                          {plan.event_type || 'Event Plan'}
+                          {plan.name || plan.event_type || 'Event Plan'}
                         </h3>
                         <p className="text-sm text-muted-foreground flex items-center gap-1">
                           <Calendar className="w-4 h-4" />
@@ -200,22 +201,28 @@ export default function SavedPlans() {
                   {/* Details */}
                   <div className="p-6 space-y-4">
                     <div className="flex flex-wrap gap-2">
+                      {plan.event_type && (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-muted rounded-full text-xs">
+                          <span>🎉</span>
+                          <span className="text-muted-foreground">{plan.event_type}</span>
+                        </span>
+                      )}
                       {plan.theme && (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-muted rounded-full text-xs">
                           <span>🎨</span>
                           <span className="text-muted-foreground">{plan.theme}</span>
                         </span>
                       )}
-                      {plan.guest_count && (
+                      {plan.guest_size && (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-muted rounded-full text-xs">
                           <span>👥</span>
-                          <span className="text-muted-foreground">{plan.guest_count} guests</span>
+                          <span className="text-muted-foreground">{plan.guest_size} guests</span>
                         </span>
                       )}
-                      {plan.budget_range && (
+                      {plan.budget && (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-muted rounded-full text-xs">
                           <span>💰</span>
-                          <span className="text-muted-foreground">{plan.budget_range}</span>
+                          <span className="text-muted-foreground">{plan.budget}</span>
                         </span>
                       )}
                       {plan.venue_type && (
@@ -226,15 +233,9 @@ export default function SavedPlans() {
                       )}
                     </div>
 
-                    {plan.ai_summary && (
-                      <p className="text-sm text-muted-foreground line-clamp-3">
-                        {plan.ai_summary}
-                      </p>
-                    )}
-
-                    {plan.raw_query && !plan.ai_summary && (
-                      <p className="text-sm text-muted-foreground line-clamp-2 italic">
-                        "{plan.raw_query}"
+                    {plan.event_date && (
+                      <p className="text-sm text-muted-foreground">
+                        Event Date: {format(new Date(plan.event_date), 'MMMM d, yyyy')}
                       </p>
                     )}
                   </div>

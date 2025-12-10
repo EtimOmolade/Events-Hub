@@ -28,6 +28,7 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Account from "./pages/Account";
 import NotFound from "./pages/NotFound";
+import ReceiptView from "./pages/ReceiptView";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +55,7 @@ const App = () => (
             <Route path="/ai-planner" element={<AIPlanner />} />
             <Route path="/event-builder" element={<EventBuilder />} />
             <Route path="/saved-plans" element={<SavedPlans />} />
+            <Route path="/receipt/:id" element={<ReceiptView />} />
             <Route path="/admin" element={<AdminServices />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/services" element={<AdminServices />} />

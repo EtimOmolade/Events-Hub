@@ -227,6 +227,86 @@ export type Database = {
         }
         Relationships: []
       }
+      receipts: {
+        Row: {
+          booking_id: string | null
+          created_at: string
+          currency: string
+          customer_email: string
+          customer_name: string
+          discount_amount: number
+          event_date: string
+          event_type: string
+          id: string
+          items: Json
+          payment_date: string
+          payment_method: string | null
+          payment_reference: string
+          receipt_number: string
+          service_fee: number
+          status: string
+          subtotal: number
+          total_amount: number
+          user_id: string
+          vat_amount: number
+          venue: string | null
+        }
+        Insert: {
+          booking_id?: string | null
+          created_at?: string
+          currency?: string
+          customer_email: string
+          customer_name: string
+          discount_amount?: number
+          event_date: string
+          event_type: string
+          id?: string
+          items?: Json
+          payment_date?: string
+          payment_method?: string | null
+          payment_reference: string
+          receipt_number: string
+          service_fee?: number
+          status?: string
+          subtotal?: number
+          total_amount: number
+          user_id: string
+          vat_amount?: number
+          venue?: string | null
+        }
+        Update: {
+          booking_id?: string | null
+          created_at?: string
+          currency?: string
+          customer_email?: string
+          customer_name?: string
+          discount_amount?: number
+          event_date?: string
+          event_type?: string
+          id?: string
+          items?: Json
+          payment_date?: string
+          payment_method?: string | null
+          payment_reference?: string
+          receipt_number?: string
+          service_fee?: number
+          status?: string
+          subtotal?: number
+          total_amount?: number
+          user_id?: string
+          vat_amount?: number
+          venue?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receipts_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_plans: {
         Row: {
           budget: string | null
