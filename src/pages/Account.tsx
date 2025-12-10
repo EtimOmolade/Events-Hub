@@ -33,7 +33,7 @@ import {
   EyeOff
 } from 'lucide-react';
 import { useStore } from '@/store/useStore';
-import { useTheme } from '@/hooks/useTheme';
+import { useTheme } from '@/providers/ThemeProvider';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
