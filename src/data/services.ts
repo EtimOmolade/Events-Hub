@@ -376,8 +376,8 @@ export const services: Service[] = [
     rating: 4.8,
     reviewCount: 178,
     images: [
-      'https://images.unsplash.com/photo-1571266028243-e4733b0f0bb0?w=800',
-      'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800',
+     'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800',
+      'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800',
     ],
     vendorId: 'v5',
     vendorName: 'SoundWave Entertainment',

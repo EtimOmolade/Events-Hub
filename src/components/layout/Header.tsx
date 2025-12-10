@@ -53,15 +53,17 @@ export function Header() {
             <Link to="/services" className={`transition-colors ${isActive('/services') ? 'text-gold font-medium' : 'text-foreground/80 hover:text-gold'}`}>
               Services
             </Link>
-            <Link to="/ai-planner" className={`flex items-center gap-1 transition-colors ${isActive('/ai-planner') ? 'text-gold-light font-semibold' : 'text-gold hover:text-gold-light font-medium'}`}>
-              <Sparkles className="h-4 w-4" /> AI Planner
-            </Link>
+           
             <Link to="/event-builder" className={`transition-colors ${isActive('/event-builder') ? 'text-gold font-medium' : 'text-foreground/80 hover:text-gold'}`}>
               Event Builder
             </Link>
             <Link to="/vendors" className={`transition-colors ${isActive('/vendors') ? 'text-gold font-medium' : 'text-foreground/80 hover:text-gold'}`}>
               Vendors
             </Link>
+             <Link to="/bookings" className={`transition-colors ${isActive('/services') ? 'text-gold font-medium' : 'text-foreground/80 hover:text-gold'}`}>
+              Bookings
+            </Link>
+            
           </nav>
 
           {/* Desktop Actions */}
