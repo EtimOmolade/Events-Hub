@@ -198,6 +198,22 @@ export default function EventBuilder() {
     <Layout>
       <div className="min-h-screen py-8 bg-gradient-to-b from-secondary/50 to-background">
         <div className="container mx-auto px-4">
+          {/* Back to Previous Page Button */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="mb-4"
+          >
+            <Button
+              variant="ghost"
+              onClick={() => navigate(-1)}
+              className="gap-2 text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </Button>
+          </motion.div>
+
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
