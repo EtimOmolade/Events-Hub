@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { Calendar, Trash2, Eye, MessageSquare, Sparkles, ArrowLeft, Loader2 } from 'lucide-react';
+import { Calendar, Trash2, Eye, MessageSquare, Sparkles, ArrowLeft, Loader2, Edit } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -17,11 +17,14 @@ interface EventPlan {
   name: string;
   event_type: string | null;
   theme: string | null;
+  colors: string | null;
   guest_count: number | null;
+  venue: string | null;
   budget: number | null;
   event_date: string | null;
   notes: string | null;
   ai_conversation: Array<{ role: 'user' | 'assistant'; content: string }> | null;
+  ai_summary: string | null;
   created_at: string | null;
 }
 
@@ -42,40 +45,34 @@ export default function SavedPlans() {
     if (!user) return;
     
     setIsLoading(true);
-    // TODO: Enable when event_plans table is created
-    // const { data, error } = await supabase
-    //   .from('event_plans')
-    //   .select('*')
-    //   .eq('user_id', user.id)
-    //   .order('created_at', { ascending: false });
-    // if (error) {
-    //   console.error('Error fetching plans:', error);
-    //   toast.error('Failed to load saved plans');
-    // } else {
-    //   setPlans((data || []) as unknown as EventPlan[]);
-    // }
-    
-    // For now, return empty array until table is created
-    setPlans([]);
+    const { data, error } = await supabase
+      .from('event_plans')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching plans:', error);
+      toast.error('Failed to load saved plans');
+      setPlans([]);
+    } else {
+      setPlans((data || []) as unknown as EventPlan[]);
+    }
     setIsLoading(false);
   };
 
   const handleRemovePlan = async (planId: string) => {
-    // TODO: Enable when event_plans table is created
-    // const { error } = await supabase
-    //   .from('event_plans')
-    //   .delete()
-    //   .eq('id', planId);
-    // if (error) {
-    //   toast.error('Failed to delete plan');
-    // } else {
-    //   setPlans(plans.filter(p => p.id !== planId));
-    //   toast.success('Plan removed');
-    // }
-    
-    // For now, just remove from local state
-    setPlans(plans.filter(p => p.id !== planId));
-    toast.success('Plan removed');
+    const { error } = await supabase
+      .from('event_plans')
+      .delete()
+      .eq('id', planId);
+
+    if (error) {
+      toast.error('Failed to delete plan');
+    } else {
+      setPlans(plans.filter(p => p.id !== planId));
+      toast.success('Plan removed');
+    }
   };
 
   if (authLoading) {
@@ -132,14 +129,22 @@ export default function SavedPlans() {
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-8"
+            className="flex items-center justify-between mb-8 flex-wrap gap-4"
           >
-            <h1 className="font-display text-3xl md:text-4xl font-bold mb-2">
-              Saved Event Plans
-            </h1>
-            <p className="text-muted-foreground">
-              Your saved event configurations and AI conversations
-            </p>
+            <div>
+              <h1 className="font-display text-3xl md:text-4xl font-bold mb-2">
+                Saved Event Plans
+              </h1>
+              <p className="text-muted-foreground">
+                Your saved event configurations and AI conversations
+              </p>
+            </div>
+            <Link to="/planner">
+              <Button variant="gold" className="gap-2">
+                <Sparkles className="w-4 h-4" />
+                Create New Plan
+              </Button>
+            </Link>
           </motion.div>
 
           {isLoading ? (
@@ -157,21 +162,14 @@ export default function SavedPlans() {
                 No saved plans yet
               </h2>
               <p className="text-muted-foreground mb-6">
-                Use our AI Planner or Event Builder to create and save plans
+                Use our Event Planner to create and save your event plans
               </p>
-              <div className="flex gap-3 justify-center">
-                <Link to="/ai-planner">
-                  <Button variant="gold" className="gap-2">
-                    <Sparkles className="w-4 h-4" />
-                    AI Planner
-                  </Button>
-                </Link>
-                <Link to="/event-builder">
-                  <Button variant="outline" className="gap-2">
-                    Event Builder
-                  </Button>
-                </Link>
-              </div>
+              <Link to="/planner">
+                <Button variant="gold" className="gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  Start Planning
+                </Button>
+              </Link>
             </motion.div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -236,9 +234,27 @@ export default function SavedPlans() {
                             <span className="text-muted-foreground">{plan.guest_count} guests</span>
                           </span>
                         )}
+                        {plan.budget && (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-muted rounded-full text-xs">
+                            <span>💰</span>
+                            <span className="text-muted-foreground">₦{plan.budget.toLocaleString()}</span>
+                          </span>
+                        )}
+                        {plan.venue && (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-muted rounded-full text-xs">
+                            <span>📍</span>
+                            <span className="text-muted-foreground">{plan.venue}</span>
+                          </span>
+                        )}
                       </div>
 
-                      {plan.notes && (
+                      {plan.ai_summary && (
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {plan.ai_summary}
+                        </p>
+                      )}
+
+                      {plan.notes && !plan.ai_summary && (
                         <p className="text-sm text-muted-foreground line-clamp-2">
                           {plan.notes}
                         </p>
@@ -253,16 +269,16 @@ export default function SavedPlans() {
                             onClick={() => setSelectedPlan(plan)}
                           >
                             <Eye className="w-4 h-4" />
-                            View Conversation
+                            View Chat
                           </Button>
                         )}
                         <Button
                           variant="gold"
                           className="flex-1 gap-2"
-                          onClick={() => navigate('/ai-planner')}
+                          onClick={() => navigate('/planner')}
                         >
-                          <Sparkles className="w-4 h-4" />
-                          Continue Planning
+                          <Edit className="w-4 h-4" />
+                          Continue
                         </Button>
                       </div>
                     </div>

@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { ThemeProvider } from "./providers/ThemeProvider";
 import { FloatingAIWidget } from "./components/ai/FloatingAIWidget";
@@ -17,9 +17,8 @@ import Bookings from "./pages/Bookings";
 import Categories from "./pages/Categories";
 import Vendors from "./pages/Vendors";
 import VendorDetail from "./pages/VendorDetail";
-import EventBuilder from "./pages/EventBuilder";
+import Planner from "./pages/Planner";
 import SavedPlans from "./pages/SavedPlans";
-import AIPlanner from "./pages/AIPlanner";
 import AdminLogin from "./pages/AdminLogin";
 import AdminServices from "./pages/admin/AdminServices";
 import AdminVendors from "./pages/admin/AdminVendors";
@@ -51,9 +50,12 @@ const App = () => (
             <Route path="/categories" element={<Categories />} />
             <Route path="/vendors" element={<Vendors />} />
             <Route path="/vendor/:id" element={<VendorDetail />} />
-            <Route path="/event-builder" element={<EventBuilder />} />
+            {/* Unified Planner - replaces both ai-planner and event-builder */}
+            <Route path="/planner" element={<Planner />} />
+            {/* Redirects from old routes */}
+            <Route path="/ai-planner" element={<Navigate to="/planner" replace />} />
+            <Route path="/event-builder" element={<Navigate to="/planner" replace />} />
             <Route path="/saved-plans" element={<SavedPlans />} />
-            <Route path="/ai-planner" element={<AIPlanner />} />
             <Route path="/admin" element={<AdminServices />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/services" element={<AdminServices />} />
