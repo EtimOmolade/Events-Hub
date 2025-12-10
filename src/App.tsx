@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ScrollToTop } from "./components/ScrollToTop";
+import { ThemeProvider } from "./providers/ThemeProvider";
 import { FloatingAIWidget } from "./components/ai/FloatingAIWidget";
 import Index from "./pages/Index";
 import Services from "./pages/Services";
@@ -31,42 +32,44 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <ScrollToTop />
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/services" element={<Services />} />
-          <Route path="/service/:id" element={<ServiceDetail />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/wishlist" element={<Wishlist />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/bookings" element={<Bookings />} />
-          <Route path="/categories" element={<Categories />} />
-          <Route path="/vendors" element={<Vendors />} />
-          <Route path="/vendor/:id" element={<VendorDetail />} />
-          <Route path="/event-builder" element={<EventBuilder />} />
-          <Route path="/saved-plans" element={<SavedPlans />} />
-          <Route path="/ai-planner" element={<AIPlanner />} />
-          <Route path="/admin" element={<AdminServices />} />
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin/services" element={<AdminServices />} />
-          <Route path="/admin/vendors" element={<AdminVendors />} />
-          <Route path="/admin/categories" element={<AdminCategories />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/about-us" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/account" element={<Account />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <FloatingAIWidget />
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <ScrollToTop />
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/services" element={<Services />} />
+            <Route path="/service/:id" element={<ServiceDetail />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/wishlist" element={<Wishlist />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/bookings" element={<Bookings />} />
+            <Route path="/categories" element={<Categories />} />
+            <Route path="/vendors" element={<Vendors />} />
+            <Route path="/vendor/:id" element={<VendorDetail />} />
+            <Route path="/event-builder" element={<EventBuilder />} />
+            <Route path="/saved-plans" element={<SavedPlans />} />
+            <Route path="/ai-planner" element={<AIPlanner />} />
+            <Route path="/admin" element={<AdminServices />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/services" element={<AdminServices />} />
+            <Route path="/admin/vendors" element={<AdminVendors />} />
+            <Route path="/admin/categories" element={<AdminCategories />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/about-us" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/account" element={<Account />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <FloatingAIWidget />
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ThemeProvider>
 );
 
 export default App;
