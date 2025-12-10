@@ -5,6 +5,7 @@ import { format, addMonths, subMonths, startOfMonth, isSameMonth, isSameDay, isT
 import { Button } from '@/components/ui/button';
 import { generateVendorAvailability, AvailabilitySlot } from '@/data/vendorData';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface VendorAvailabilityCalendarProps {
   vendorId: string;
@@ -98,11 +99,27 @@ export function VendorAvailabilityCalendar({
           const isSelected = selectedDate && isSameDay(date, selectedDate);
           const isTodayDate = isToday(date);
 
+          const handleDateClick = () => {
+            if (isPast) return;
+            if (slot.status === 'booked') {
+              toast.info('This date is already booked');
+              return;
+            }
+            if (isSelected) {
+              toast.info('This date is already selected for you');
+              return;
+            }
+            if (slot.status === 'tentative') {
+              toast.warning('This date has a tentative booking - proceed with caution');
+            }
+            onSelectDate?.(date, slot.status);
+          };
+
           return (
             <button
               key={slot.date}
-              onClick={() => !isPast && slot.status === 'available' && onSelectDate?.(date, slot.status)}
-              disabled={isPast || slot.status === 'booked'}
+              onClick={handleDateClick}
+              disabled={isPast}
               className={cn(
                 "aspect-square rounded-lg flex flex-col items-center justify-center text-sm transition-all",
                 "hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gold/50",
@@ -111,7 +128,7 @@ export function VendorAvailabilityCalendar({
                 isTodayDate && "font-bold",
                 slot.status === 'available' && !isPast && "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400",
                 slot.status === 'tentative' && !isPast && "bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400",
-                slot.status === 'booked' && "bg-red-500/10 text-red-500 cursor-not-allowed"
+                slot.status === 'booked' && "bg-red-500/10 text-red-500 cursor-pointer"
               )}
             >
               <span>{format(date, 'd')}</span>

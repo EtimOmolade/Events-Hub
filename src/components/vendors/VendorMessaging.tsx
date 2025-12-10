@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, X, MessageCircle, ChevronLeft } from 'lucide-react';
+import { Send, X, MessageCircle, ChevronLeft, LogIn } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { VendorConversation, VendorMessage, sampleConversations } from '@/data/vendorData';
 import { vendors } from '@/data/services';
+import { useStore } from '@/store/useStore';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -16,6 +18,8 @@ interface VendorMessagingProps {
 }
 
 export function VendorMessaging({ isOpen, onClose, initialVendorId }: VendorMessagingProps) {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useStore();
   const [conversations, setConversations] = useState<VendorConversation[]>(sampleConversations);
   const [activeConversation, setActiveConversation] = useState<string | null>(initialVendorId || null);
   const [newMessage, setNewMessage] = useState('');
@@ -49,8 +53,18 @@ export function VendorMessaging({ isOpen, onClose, initialVendorId }: VendorMess
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [activeConvo?.messages]);
 
+  const handleSignIn = () => {
+    onClose();
+    navigate('/auth');
+  };
+
   const handleSendMessage = () => {
     if (!newMessage.trim() || !activeConversation) return;
+    
+    if (!isAuthenticated) {
+      toast.error('Please sign in to send messages');
+      return;
+    }
 
     const message: VendorMessage = {
       id: `m-${Date.now()}`,
@@ -235,23 +249,33 @@ export function VendorMessaging({ isOpen, onClose, initialVendorId }: VendorMess
 
               {/* Input */}
               <div className="p-4 border-t border-border">
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleSendMessage();
-                  }}
-                  className="flex items-center gap-2"
-                >
-                  <Input
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Type a message..."
-                    className="flex-1"
-                  />
-                  <Button type="submit" variant="gold" size="icon" disabled={!newMessage.trim()}>
-                    <Send className="w-4 h-4" />
-                  </Button>
-                </form>
+                {isAuthenticated ? (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <Input
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      placeholder="Type a message..."
+                      className="flex-1"
+                    />
+                    <Button type="submit" variant="gold" size="icon" disabled={!newMessage.trim()}>
+                      <Send className="w-4 h-4" />
+                    </Button>
+                  </form>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <p className="text-sm text-muted-foreground flex-1">Sign in to send messages</p>
+                    <Button variant="gold" onClick={handleSignIn} className="gap-2">
+                      <LogIn className="w-4 h-4" />
+                      Sign In
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           )}

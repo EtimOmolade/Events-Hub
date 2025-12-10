@@ -44,17 +44,20 @@ export default function VendorDetail() {
   }
 
   const handleContactVendor = () => {
-    if (!isAuthenticated) {
-      toast.error('Please sign in to message vendors');
-      navigate('/auth');
-      return;
-    }
+    // Open messaging regardless of auth - the messaging component can handle auth check
     setIsMessagingOpen(true);
   };
 
   const handleHireVendor = () => {
     if (!selectedDate) {
-      toast.error('Please select an available date first');
+      toast.error('Please select a date first', {
+        description: 'Go to the Availability tab and pick an available (green) date'
+      });
+      return;
+    }
+    if (!isAuthenticated) {
+      toast.error('Please sign in to hire vendors');
+      navigate('/auth');
       return;
     }
     toast.success(`Request sent to ${vendor.name}!`, {
