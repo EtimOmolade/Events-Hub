@@ -98,7 +98,7 @@ const stats = [
 const teamMembers = [
   {
     name: 'Adaeze Okonkwo',
-    role: 'Founder',
+    role: 'Founder & CEO',
     image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&h=300&fit=crop&crop=face',
     bio: 'Visionary leader with 15+ years in event management.'
   },
