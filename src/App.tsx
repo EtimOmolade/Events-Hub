@@ -1,9 +1,9 @@
+import { useLayoutEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { ScrollToTop } from "./components/ScrollToTop";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { ThemeProvider } from "./providers/ThemeProvider";
 import { FloatingAIWidget } from "./components/ai/FloatingAIWidget";
 import Index from "./pages/Index";
@@ -29,8 +29,22 @@ import Contact from "./pages/Contact";
 import Account from "./pages/Account";
 import NotFound from "./pages/NotFound";
 import ReceiptView from "./pages/ReceiptView";
+import { RealtimeSync } from "./components/RealtimeSync";
 
 const queryClient = new QueryClient();
+
+// Inline ScrollToTop component
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  useLayoutEffect(() => {
+    // Scroll to top instantly for all browsers
+    document.documentElement.scrollTop = 0; // most browsers
+    document.body.scrollTop = 0; // Safari
+  }, [pathname]);
+
+  return null;
+};
 
 const App = () => (
   <ThemeProvider>
@@ -39,6 +53,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <RealtimeSync />
           <ScrollToTop />
           <Routes>
             <Route path="/" element={<Index />} />

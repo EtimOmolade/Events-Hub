@@ -5,6 +5,7 @@ import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { useStore } from '@/store/useStore';
 import { formatPrice } from '@/data/services';
+import { toast } from 'sonner';
 
 export default function Cart() {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ export default function Cart() {
 
   const handleCheckout = () => {
     if (!isAuthenticated) {
+      toast.error('You need to sign in to checkout');
       navigate('/auth?redirect=/checkout');
     } else {
       navigate('/checkout');
@@ -69,7 +71,7 @@ export default function Cart() {
           variant="ghost"
           size="sm"
           className="mb-6 flex items-center gap-2"
-          onClick={handleBack} // use updated back handler
+          onClick={handleBack}
         >
           <ArrowLeft className="w-4 h-4" />
           Back
@@ -112,15 +114,33 @@ export default function Cart() {
                 <div className="flex sm:flex-col items-center sm:items-end justify-between gap-4">
                   <div className="flex items-center border rounded-lg">
                     <button
-                      onClick={() => updateCartQuantity(item.service.id, item.quantity - 1)}
-                      className="w-8 h-8 flex items-center justify-center hover:bg-muted transition-colors"
+                      onClick={() => {
+                        if (!isAuthenticated) {
+                          toast.error('Sign in to update quantity');
+                          navigate('/auth?redirect=/cart');
+                          return;
+                        }
+                        updateCartQuantity(item.service.id, item.quantity - 1);
+                      }}
+                      className={`w-8 h-8 flex items-center justify-center hover:bg-muted transition-colors ${
+                        !isAuthenticated ? 'cursor-not-allowed opacity-50' : ''
+                      }`}
                     >
                       <Minus className="w-4 h-4" />
                     </button>
                     <span className="w-10 text-center font-medium">{item.quantity}</span>
                     <button
-                      onClick={() => updateCartQuantity(item.service.id, item.quantity + 1)}
-                      className="w-8 h-8 flex items-center justify-center hover:bg-muted transition-colors"
+                      onClick={() => {
+                        if (!isAuthenticated) {
+                          toast.error('Sign in to update quantity');
+                          navigate('/auth?redirect=/cart');
+                          return;
+                        }
+                        updateCartQuantity(item.service.id, item.quantity + 1);
+                      }}
+                      className={`w-8 h-8 flex items-center justify-center hover:bg-muted transition-colors ${
+                        !isAuthenticated ? 'cursor-not-allowed opacity-50' : ''
+                      }`}
                     >
                       <Plus className="w-4 h-4" />
                     </button>
@@ -128,8 +148,17 @@ export default function Cart() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => removeFromCart(item.service.id)}
-                    className="text-destructive hover:text-destructive"
+                    onClick={() => {
+                      if (!isAuthenticated) {
+                        toast.error('Sign in to remove items');
+                        navigate('/auth?redirect=/cart');
+                        return;
+                      }
+                      removeFromCart(item.service.id);
+                    }}
+                    className={`text-destructive hover:text-destructive ${
+                      !isAuthenticated ? 'cursor-not-allowed opacity-50' : ''
+                    }`}
                   >
                     <Trash2 className="w-4 h-4" />
                     <span className="sm:hidden ml-2">Remove</span>
@@ -164,7 +193,12 @@ export default function Cart() {
                   </span>
                 </div>
               </div>
-              <Button variant="gold" size="lg" className="w-full group" onClick={handleCheckout}>
+              <Button
+                variant="gold"
+                size="lg"
+                className="w-full group"
+                onClick={handleCheckout}
+              >
                 Proceed to Checkout
                 <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
               </Button>

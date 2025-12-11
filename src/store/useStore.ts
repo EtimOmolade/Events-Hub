@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export interface Service {
   id: string;
@@ -114,7 +116,7 @@ interface AppState {
 
   // Bookings
   bookings: Booking[];
-  addBooking: (booking: Booking) => void;
+  addBooking: (booking: Booking) => Promise<void>;
   updateBookingStatus: (bookingId: string, status: Booking['status']) => void;
 
   // Saved Plans
@@ -139,6 +141,10 @@ interface AppState {
   // Recently viewed
   recentlyViewed: Service[];
   addRecentlyViewed: (service: Service) => void;
+
+  // Sync methods
+  hydrateFromDB: (userId: string) => Promise<void>;
+  saveToDB: (key: 'cart' | 'wishlist' | 'recentSearches' | 'recentlyViewed', data: any) => Promise<void>;
 }
 
 export const useStore = create<AppState>()(
@@ -171,9 +177,15 @@ export const useStore = create<AppState>()(
         } else {
           set({ cart: [...cart, { service, quantity }] });
         }
+
+        // Sync to DB
+        const { user, saveToDB, cart: newCart } = get();
+        if (user) saveToDB('cart', newCart);
       },
       removeFromCart: (serviceId) => {
         set({ cart: get().cart.filter((item) => item.service.id !== serviceId) });
+        const { user, saveToDB, cart } = get();
+        if (user) saveToDB('cart', cart);
       },
       updateCartQuantity: (serviceId, quantity) => {
         if (quantity <= 0) {
@@ -185,8 +197,14 @@ export const useStore = create<AppState>()(
             item.service.id === serviceId ? { ...item, quantity } : item
           ),
         });
+        const { user, saveToDB, cart } = get();
+        if (user) saveToDB('cart', cart);
       },
-      clearCart: () => set({ cart: [] }),
+      clearCart: () => {
+        set({ cart: [] });
+        const { user, saveToDB } = get();
+        if (user) saveToDB('cart', []);
+      },
       getCartTotal: () => {
         return get().cart.reduce(
           (total, item) => total + item.service.price * item.quantity,
@@ -199,11 +217,17 @@ export const useStore = create<AppState>()(
       addToWishlist: (service) => {
         const { wishlist } = get();
         if (!wishlist.find((s) => s.id === service.id)) {
-          set({ wishlist: [...wishlist, service] });
+          const newData = [...wishlist, service];
+          set({ wishlist: newData });
+          const { user, saveToDB } = get();
+          if (user) saveToDB('wishlist', newData);
         }
       },
       removeFromWishlist: (serviceId) => {
-        set({ wishlist: get().wishlist.filter((s) => s.id !== serviceId) });
+        const newData = get().wishlist.filter((s) => s.id !== serviceId);
+        set({ wishlist: newData });
+        const { user, saveToDB } = get();
+        if (user) saveToDB('wishlist', newData);
       },
       isInWishlist: (serviceId) => {
         return get().wishlist.some((s) => s.id === serviceId);
@@ -211,8 +235,33 @@ export const useStore = create<AppState>()(
 
       // Bookings
       bookings: [],
-      addBooking: (booking) => {
+      addBooking: async (booking) => {
         set({ bookings: [...get().bookings, booking] });
+
+        // Persist to Supabase
+        const { user } = get();
+        if (user) {
+          const { error } = await supabase.from('bookings').insert({
+            id: booking.id,
+            user_id: user.id,
+            event_type: booking.eventType,
+            event_date: booking.eventDate,
+            venue: booking.venue,
+            budget: booking.budget,
+            guest_count: booking.guestCount,
+            status: booking.status,
+            total_amount: booking.totalAmount,
+            customer_name: booking.customerName,
+            customer_email: booking.customerEmail,
+            customer_phone: booking.customerPhone,
+            created_at: booking.createdAt
+          });
+
+          if (error) {
+            console.error('Failed to save booking:', error);
+            toast.error(`Failed to save booking: ${error.message}`);
+          }
+        }
       },
       updateBookingStatus: (bookingId, status) => {
         set({
@@ -244,22 +293,106 @@ export const useStore = create<AppState>()(
       // Recent searches
       recentSearches: [],
       addRecentSearch: (term) => {
-        const { recentSearches } = get();
+        const { recentSearches, user, saveToDB } = get();
         const filtered = recentSearches.filter(s => s.toLowerCase() !== term.toLowerCase());
-        set({ recentSearches: [term, ...filtered].slice(0, 10) });
+        const newData = [term, ...filtered].slice(0, 10);
+        set({ recentSearches: newData });
+        if (user) saveToDB('recentSearches', newData);
       },
 
       // Recently viewed
       recentlyViewed: [],
       addRecentlyViewed: (service) => {
-        const { recentlyViewed } = get();
+        const { recentlyViewed, user, saveToDB } = get();
         const filtered = recentlyViewed.filter(s => s.id !== service.id);
-        set({ recentlyViewed: [service, ...filtered].slice(0, 10) });
+        const newData = [service, ...filtered].slice(0, 10);
+        set({ recentlyViewed: newData });
+        if (user) saveToDB('recentlyViewed', newData);
+      },
+
+      // Persistence Logic (SQL Table Strategy)
+      hydrateFromDB: async (userId: string) => {
+        if (!userId) return;
+
+        const { data, error } = await (supabase
+          .from('user_storage') as any)
+          .select('*')
+          .eq('user_id', userId)
+          .single();
+
+        if (data) {
+          set({
+            cart: data.cart_data || [],
+            wishlist: data.wishlist_data || [],
+            recentlyViewed: data.recently_viewed_data || [],
+            recentSearches: data.recent_searches_data || [],
+          });
+        } else if (error && error.code === 'PGRST116') {
+          // Row missing, create it
+          await (supabase.from('user_storage') as any).insert({ user_id: userId });
+        }
+
+        // Also Load Bookings
+        const { data: bookingsData, error: bookingsError } = await supabase
+          .from('bookings')
+          .select('*')
+          .eq('user_id', userId);
+
+        if (bookingsData) {
+          const mappedBookings: Booking[] = bookingsData.map((b: any) => ({
+            id: b.id,
+            services: [], // Note: Need to fetch booking items if we want full detail here, keeping light for now.
+            eventType: b.event_type,
+            eventDate: b.event_date,
+            venue: b.venue,
+            budget: b.budget,
+            guestCount: b.guest_count,
+            status: b.status,
+            totalAmount: b.total_amount,
+            createdAt: b.created_at,
+            customerName: b.customer_name,
+            customerEmail: b.customer_email,
+            customerPhone: b.customer_phone
+          }));
+          set({ bookings: mappedBookings });
+        }
+      },
+
+      saveToDB: async (key, data) => {
+        const { user } = get();
+        if (!user) return;
+
+        // Map store keys to DB columns
+        const columnMap: Record<string, string> = {
+          'cart': 'cart_data',
+          'wishlist': 'wishlist_data',
+          'recentlyViewed': 'recently_viewed_data',
+          'recentSearches': 'recent_searches_data'
+        };
+
+        const dbColumn = columnMap[key];
+        if (!dbColumn) return;
+
+        // Use upsert to ensure row exists and data is saved
+        (supabase
+          .from('user_storage') as any)
+          .upsert({
+            user_id: user.id,
+            [dbColumn]: data,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'user_id' })
+          .then(({ error }: any) => {
+            if (error) {
+              console.error(`Failed to save ${key}:`, error);
+              toast.error(`Sync failed: ${error.message}`);
+            }
+          });
       },
     }),
     {
       name: 'events-hub-storage',
       partialize: (state) => ({
+        // Keep local persist for Guest users / offline capability
         user: state.user,
         isAuthenticated: state.isAuthenticated,
         isAdminAuthenticated: state.isAdminAuthenticated,

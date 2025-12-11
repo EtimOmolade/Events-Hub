@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import confetti from 'canvas-confetti';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -124,8 +125,53 @@ export default function Checkout() {
     // Simulate payment processing
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    const bookingId = `BK-${Date.now()}`;
+    // Insert booking into Supabase
+    const { data: bookingData, error: bookingError } = await supabase
+      .from('bookings')
+      .insert({
+        user_id: user.id,
+        event_type: formData.eventType,
+        event_date: formData.eventDate,
+        venue: formData.venue,
+        budget: parseInt(formData.budget) || grandTotal,
+        guest_count: parseInt(formData.guestCount) || 0,
+        status: 'pending',
+        total_amount: grandTotal,
+        customer_name: formData.customerName,
+        customer_email: formData.customerEmail,
+        customer_phone: formData.customerPhone,
+        notes: formData.notes
+      })
+      .select()
+      .single();
 
+    if (bookingError) {
+      console.error('Error creating booking:', bookingError);
+      toast.error('Failed to create booking. Please try again.');
+      setIsProcessing(false);
+      return;
+    }
+
+    const bookingId = bookingData.id;
+
+    // Create booking items
+    const bookingItems = cart.map(item => ({
+      booking_id: bookingId,
+      service_name: item.service.name,
+      quantity: item.quantity,
+      unit_price: item.service.price,
+      // We skip service_id for now as we are using static services not in DB
+    }));
+
+    const { error: itemsError } = await supabase
+      .from('booking_items')
+      .insert(bookingItems);
+
+    if (itemsError) {
+      console.error('Error creating booking items:', itemsError);
+    }
+
+    // Keep local store in sync for now (optional, but good for immediate UI feedback if we navigated back to a store-based view)
     const booking: Booking = {
       id: bookingId,
       services: cart,
@@ -157,6 +203,7 @@ export default function Checkout() {
     // Create receipt in database
     const { data: newReceipt, error } = await createReceipt({
       userId: user.id,
+      bookingId: bookingId, // Link to the real database booking
       customerName: formData.customerName,
       customerEmail: formData.customerEmail,
       eventType: formData.eventType,

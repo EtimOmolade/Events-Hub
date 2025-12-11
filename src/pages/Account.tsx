@@ -10,10 +10,10 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { 
-  User, 
-  Mail, 
-  Phone, 
+import {
+  User,
+  Mail,
+  Phone,
   Camera,
   Calendar,
   Bookmark,
@@ -93,7 +93,7 @@ export default function Account() {
   const { isAdminAuthenticated } = useStore();
   const { user, isAuthenticated, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  
+
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [notifications, setNotifications] = useState(true);
@@ -107,7 +107,7 @@ export default function Account() {
     confirmPassword: ''
   });
   const [passwordError, setPasswordError] = useState('');
-  
+
   const [profileData, setProfileData] = useState({
     name: '',
     email: '',
@@ -141,10 +141,50 @@ export default function Account() {
     setProfileData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSaveProfile = () => {
-    // Here you would typically save to backend
-    toast.success('Profile updated successfully!');
-    setIsEditing(false);
+  const handleSaveProfile = async () => {
+    try {
+      setIsLoading(true); // Re-use loading state or add a saving state if preferred, but for now simple
+
+      const updates = {
+        full_name: profileData.name,
+        phone: profileData.phone,
+        // email: profileData.email // Updating email requires re-verification flow usually, we'll skip for now or handle separately if requested. 
+        // For simple profile edits, usually we just update metadata.
+      };
+
+      // 1. Update Auth Metadata
+      const { data: { user: updatedUser }, error: authError } = await supabase.auth.updateUser({
+        data: updates
+      });
+
+      if (authError) throw authError;
+
+      // 2. Update Public Profiles Table (to keep in sync)
+      if (user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            full_name: profileData.name,
+            phone: profileData.phone,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', user.id);
+
+        if (profileError) {
+          console.error('Error updating profiles table:', profileError);
+          // We don't block success on this, but good to know
+        }
+      }
+
+      toast.success('Profile updated successfully!');
+      setIsEditing(false);
+
+    } catch (error: any) {
+      console.error('Error updating profile:', error);
+      toast.error(error.message || 'Failed to update profile');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -155,18 +195,18 @@ export default function Account() {
 
   const handlePasswordChange = async () => {
     setPasswordError('');
-    
+
     // Validation
     if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
       setPasswordError('All fields are required');
       return;
     }
-    
+
     if (passwordData.newPassword.length < 6) {
       setPasswordError('New password must be at least 6 characters');
       return;
     }
-    
+
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       setPasswordError('New passwords do not match');
       return;
@@ -224,7 +264,7 @@ export default function Account() {
                 <Skeleton className="w-32 h-4" />
               </div>
             </div>
-            
+
             {/* Cards Skeleton */}
             <div className="grid md:grid-cols-2 gap-6">
               <Skeleton className="h-64" />
@@ -245,9 +285,9 @@ export default function Account() {
       <div className="min-h-screen bg-gradient-to-b from-secondary/30 to-background py-12">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
-            
+
             {/* Profile Header */}
-            <motion.div 
+            <motion.div
               className="mb-8"
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -261,18 +301,18 @@ export default function Account() {
                     <div className="relative">
                       <Avatar className="w-24 h-24 border-4 border-background shadow-lg">
                         <AvatarImage src={user?.user_metadata?.avatar_url} />
-                      <AvatarFallback className="bg-gold text-rich-black text-2xl font-display font-bold">
+                        <AvatarFallback className="bg-gold text-rich-black text-2xl font-display font-bold">
                           {getInitials(getDisplayName(user))}
                         </AvatarFallback>
                       </Avatar>
-                      <button 
+                      <button
                         className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-gold text-rich-black flex items-center justify-center shadow-lg hover:bg-gold-light transition-colors"
                         onClick={() => toast.info('Photo upload coming soon!')}
                       >
                         <Camera className="w-4 h-4" />
                       </button>
                     </div>
-                    
+
                     {/* Name & Role */}
                     <div className="flex-1 pt-4 sm:pt-0">
                       <div className="flex items-center gap-3 mb-1">
@@ -286,7 +326,7 @@ export default function Account() {
                       </div>
                       <p className="text-muted-foreground text-sm">{obfuscateEmail(user?.email || '')}</p>
                     </div>
-                    
+
                     {/* Edit Button */}
                     <Button
                       variant={isEditing ? 'outline' : 'gold'}
@@ -345,7 +385,7 @@ export default function Account() {
                           className={!isEditing ? 'bg-muted/50' : ''}
                         />
                       </div>
-                      
+
                       <div className="space-y-2">
                         <Label htmlFor="email" className="flex items-center gap-2">
                           <Mail className="w-4 h-4 text-muted-foreground" />
@@ -361,7 +401,7 @@ export default function Account() {
                           className={!isEditing ? 'bg-muted/50' : ''}
                         />
                       </div>
-                      
+
                       <div className="space-y-2">
                         <Label htmlFor="phone" className="flex items-center gap-2">
                           <Phone className="w-4 h-4 text-muted-foreground" />
@@ -385,8 +425,8 @@ export default function Account() {
                           animate={{ opacity: 1, height: 'auto' }}
                           exit={{ opacity: 0, height: 0 }}
                         >
-                          <Button 
-                            variant="gold" 
+                          <Button
+                            variant="gold"
                             className="w-full gap-2"
                             onClick={handleSaveProfile}
                           >
@@ -493,7 +533,7 @@ export default function Account() {
                               {passwordError}
                             </div>
                           )}
-                          
+
                           <div className="space-y-2">
                             <Label htmlFor="currentPassword">Current Password</Label>
                             <div className="relative">
@@ -655,8 +695,8 @@ export default function Account() {
                 >
                   <Card className="border-border/50 shadow-card">
                     <CardContent className="p-4">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="w-full gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
                         onClick={handleLogout}
                       >

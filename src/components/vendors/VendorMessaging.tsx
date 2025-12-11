@@ -1,15 +1,17 @@
 import { useState, useRef, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { seedVendors } from '@/utils/seedVendors';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, X, MessageCircle, ChevronLeft, LogIn } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { VendorConversation, VendorMessage, sampleConversations } from '@/data/vendorData';
+import { VendorConversation } from '@/data/vendorData';
 import { vendors } from '@/data/services';
-import { useStore } from '@/store/useStore';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 
 interface VendorMessagingProps {
   isOpen: boolean;
@@ -19,35 +21,143 @@ interface VendorMessagingProps {
 
 export function VendorMessaging({ isOpen, onClose, initialVendorId }: VendorMessagingProps) {
   const navigate = useNavigate();
-  const { isAuthenticated } = useStore();
-  const [conversations, setConversations] = useState<VendorConversation[]>(sampleConversations);
-  const [activeConversation, setActiveConversation] = useState<string | null>(initialVendorId || null);
+  const { user, isAuthenticated } = useAuth();
+  const [conversations, setConversations] = useState<VendorConversation[]>([]);
+  const [activeConversation, setActiveConversation] = useState<string | null>(null); // This is the UUID
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [hasSeeded, setHasSeeded] = useState(false);
 
-  const activeConvo = conversations.find(c => c.vendorId === activeConversation);
-
+  // 1. Seed Vendors on mount
   useEffect(() => {
-    if (initialVendorId) {
-      setActiveConversation(initialVendorId);
-      
-      // If no existing conversation, create a new one
-      if (!conversations.find(c => c.vendorId === initialVendorId)) {
-        const vendor = vendors.find(v => v.id === initialVendorId);
-        if (vendor) {
-          setConversations(prev => [...prev, {
-            vendorId: vendor.id,
-            vendorName: vendor.name,
-            vendorAvatar: vendor.avatar,
-            lastMessage: '',
-            lastMessageTime: new Date().toISOString(),
-            unreadCount: 0,
-            messages: [],
-          }]);
+    const init = async () => {
+      if (!hasSeeded) {
+        await seedVendors();
+        setHasSeeded(true);
+      }
+    };
+    init();
+  }, [hasSeeded]);
+
+  // 2. Handle Initial "Static" ID (e.g., 'v1') -> Resolve to UUID
+  useEffect(() => {
+    const resolveVendor = async () => {
+      if (!initialVendorId) return;
+
+      // If we haven't seeded yet, we might miss the vendor if the table is empty.
+      // However, we initiate seeding on mount.
+      // Let's try to find it.
+
+      // Check if it's already a UUID (unlikely for now, but good practice)
+      if (initialVendorId.length > 10 && initialVendorId.includes('-')) {
+        setActiveConversation(initialVendorId);
+        return;
+      }
+
+      // It's a static ID (v1), look up by name
+      const staticVendor = vendors.find(v => v.id === initialVendorId);
+      if (staticVendor) {
+        // Retry logic: If seeding is running, we might need to wait a moment or just query.
+        // The query itself is fine.
+        const { data } = await supabase
+          .from('vendors')
+          .select('id')
+          .eq('name', staticVendor.name)
+          .single();
+
+        if (data) {
+          setActiveConversation(data.id);
+        } else if (!hasSeeded) {
+          // If not found AND not seeded, it might be because seeding is too slow.
+          // But relies on `hasSeeded` state change to re-trigger this effect.
         }
       }
-    }
-  }, [initialVendorId]);
+    };
+    resolveVendor();
+  }, [initialVendorId, hasSeeded]);
+
+  // 3. Fetch Conversations (Messages grouped by vendor)
+  useEffect(() => {
+    const fetchMessages = async () => {
+      if (!isAuthenticated || !user) return;
+
+      const { data, error } = await supabase
+        .from('vendor_messages')
+        .select(`
+          *,
+          vendor:vendors(id, name, avatar)
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching messages:', error);
+        return;
+      }
+
+      // Group by vendor
+      // We need to map the flat list of messages into VendorConversation[]
+      const grouped = new Map<string, VendorConversation>();
+
+      data?.forEach((msg: any) => {
+        const vendorId = msg.vendor.id;
+        if (!grouped.has(vendorId)) {
+          grouped.set(vendorId, {
+            vendorId: vendorId,
+            vendorName: msg.vendor.name,
+            vendorAvatar: msg.vendor.avatar,
+            lastMessage: '',
+            lastMessageTime: '',
+            unreadCount: 0,
+            messages: []
+          });
+        }
+
+        const conv = grouped.get(vendorId)!;
+        conv.messages.push({
+          id: msg.id,
+          vendorId: vendorId,
+          senderId: msg.sender_type, // 'user' or 'vendor'
+          content: msg.message,
+          timestamp: msg.created_at,
+          read: msg.read
+        });
+
+        // Update last message
+        conv.lastMessage = msg.message;
+        conv.lastMessageTime = msg.created_at;
+      });
+
+      setConversations(Array.from(grouped.values()));
+    };
+
+    fetchMessages();
+
+    // Optional: Subscribe to realtime changes here
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'vendor_messages',
+          filter: `user_id=eq.${user?.id}`,
+        },
+        (payload) => {
+          // Simplest approach: refetch
+          fetchMessages();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+
+  }, [isAuthenticated, user, hasSeeded]);
+
+  const activeConvo = conversations.find(c => c.vendorId === activeConversation);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -58,71 +168,34 @@ export function VendorMessaging({ isOpen, onClose, initialVendorId }: VendorMess
     navigate('/auth');
   };
 
-  const handleSendMessage = () => {
-    if (!newMessage.trim() || !activeConversation) return;
-    
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !activeConversation || !user) return;
+
     if (!isAuthenticated) {
       toast.error('Please sign in to send messages');
       return;
     }
 
-    const message: VendorMessage = {
-      id: `m-${Date.now()}`,
-      vendorId: activeConversation,
-      senderId: 'user',
-      content: newMessage,
-      timestamp: new Date().toISOString(),
-      read: true,
-    };
+    try {
+      const { error } = await supabase
+        .from('vendor_messages')
+        .insert({
+          vendor_id: activeConversation,
+          user_id: user.id,
+          sender_type: 'user',
+          message: newMessage.trim(),
+          read: true // User's own message is read
+        });
 
-    setConversations(prev => prev.map(conv => {
-      if (conv.vendorId === activeConversation) {
-        return {
-          ...conv,
-          messages: [...conv.messages, message],
-          lastMessage: newMessage,
-          lastMessageTime: message.timestamp,
-        };
-      }
-      return conv;
-    }));
+      if (error) throw error;
 
-    setNewMessage('');
-    
-    // Simulate vendor response
-    setTimeout(() => {
-      const responses = [
-        "Thank you for your message! I'll get back to you shortly.",
-        "That sounds great! Let me check my schedule.",
-        "Absolutely! I'd love to discuss this further.",
-        "Perfect! I'll prepare a quote for you.",
-      ];
-      const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-      
-      const vendorMessage: VendorMessage = {
-        id: `m-${Date.now()}`,
-        vendorId: activeConversation,
-        senderId: 'vendor',
-        content: randomResponse,
-        timestamp: new Date().toISOString(),
-        read: false,
-      };
+      setNewMessage('');
+      // Optimistic update could happen here, but Realtime/Fetch handles it
 
-      setConversations(prev => prev.map(conv => {
-        if (conv.vendorId === activeConversation) {
-          return {
-            ...conv,
-            messages: [...conv.messages, vendorMessage],
-            lastMessage: randomResponse,
-            lastMessageTime: vendorMessage.timestamp,
-            unreadCount: 1,
-          };
-        }
-        return conv;
-      }));
-
-      toast.info('New message received!');
-    }, 2000);
+    } catch (err) {
+      console.error('Failed to send message:', err);
+      toast.error('Failed to send message');
+    }
   };
 
   if (!isOpen) return null;
@@ -187,7 +260,7 @@ export function VendorMessaging({ isOpen, onClose, initialVendorId }: VendorMess
                     className="w-full flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors border-b border-border"
                   >
                     <img
-                      src={conv.vendorAvatar}
+                      src={conv.vendorAvatar || ''}
                       alt={conv.vendorName}
                       className="w-12 h-12 rounded-full object-cover"
                     />
@@ -195,7 +268,7 @@ export function VendorMessaging({ isOpen, onClose, initialVendorId }: VendorMess
                       <div className="flex items-center justify-between">
                         <h4 className="font-medium">{conv.vendorName}</h4>
                         <span className="text-xs text-muted-foreground">
-                          {format(new Date(conv.lastMessageTime), 'MMM d')}
+                          {conv.lastMessageTime ? format(new Date(conv.lastMessageTime), 'MMM d') : ''}
                         </span>
                       </div>
                       <p className="text-sm text-muted-foreground truncate">

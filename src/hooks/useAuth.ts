@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import type { User } from '@supabase/supabase-js';
+import { useStore } from '@/store/useStore';
 
 interface UseAuthReturn {
   user: User | null;
@@ -24,6 +25,13 @@ export function useAuth(): UseAuthReturn {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         setUser(session?.user ?? null);
+        if (session?.user) {
+          // Sync with global store
+          useStore.getState().login(session.user as any); // Cast because supabase user type vs local user type might mismatch slightly
+          useStore.getState().hydrateFromDB(session.user.id);
+        } else {
+          useStore.getState().logout();
+        }
       } catch (error) {
         console.error('Auth check error:', error);
       } finally {
@@ -36,6 +44,12 @@ export function useAuth(): UseAuthReturn {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      if (session?.user) {
+        useStore.getState().login(session.user as any);
+        useStore.getState().hydrateFromDB(session.user.id);
+      } else {
+        useStore.getState().logout();
+      }
     });
 
     return () => subscription?.unsubscribe();
@@ -85,13 +99,22 @@ export function useAuth(): UseAuthReturn {
   const signOut = async () => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      setUser(null);
-      navigate('/');
+      await supabase.auth.signOut();
     } catch (error) {
-      throw error;
+      console.error('Sign out error:', error);
     } finally {
+      // Manual cleanup of Supabase tokens in localStorage to force logout locally
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+
+      // Always clear local state, even if server fails (e.g. network error or invalid session)
+      setUser(null);
+      // Also clear global store
+      useStore.getState().logout();
+      navigate('/');
       setIsLoading(false);
     }
   };

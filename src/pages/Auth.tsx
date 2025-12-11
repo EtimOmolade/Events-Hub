@@ -73,10 +73,10 @@ export default function Auth() {
       if (isLogin) {
         // Login flow
         const { error } = await signIn(formData.email, formData.password);
-        
+
         if (error) {
           if (error.message.includes('Invalid login credentials')) {
-            toast.error('Invalid email or password. Please try again.');
+            toast.error("Invalid credentials. If you don't have an account, please Sign Up first.");
           } else if (error.message.includes('Email not confirmed')) {
             toast.error('Please confirm your email address before signing in. Check your inbox for a confirmation link.');
           } else {
@@ -100,7 +100,7 @@ export default function Auth() {
             },
           },
         });
-        
+
         if (error) {
           if (error.message.includes('User already registered')) {
             toast.error('This email is already registered. Please sign in instead.');

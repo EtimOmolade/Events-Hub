@@ -1,73 +1,117 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { CalendarDays, MapPin, Users, Clock, Package, ArrowLeft } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Calendar, MapPin, Users, Wallet, Clock, ArrowRight, Download, Package, Loader2 } from 'lucide-react';
+import { format } from 'date-fns';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { useStore, Booking } from '@/store/useStore';
+import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
-import { formatPrice } from '@/data/services';
-import { format } from 'date-fns';
-
-const statusColors: Record<Booking['status'], string> = {
-  pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  confirmed: 'bg-blue-100 text-blue-800 border-blue-200',
-  'in-progress': 'bg-purple-100 text-purple-800 border-purple-200',
-  completed: 'bg-green-100 text-green-800 border-green-200',
-  cancelled: 'bg-red-100 text-red-800 border-red-200',
-};
-
-const statusLabels: Record<Booking['status'], string> = {
-  pending: 'Pending',
-  confirmed: 'Confirmed',
-  'in-progress': 'In Progress',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
-};
+import { Booking } from '@/store/useStore';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export default function Bookings() {
   const navigate = useNavigate();
-  const { bookings } = useStore();
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  if (!isAuthenticated) {
+  useEffect(() => {
+    async function fetchBookings() {
+      if (!user) return;
+
+      try {
+        setLoading(true);
+        const { data: bookingsData, error } = await supabase
+          .from('bookings')
+          .select(`
+            *,
+            booking_items (*)
+          `)
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('Error fetching bookings:', error);
+          toast.error('Failed to load bookings');
+          return;
+        }
+
+        // Map Supabase data to our Booking interface
+        const mappedBookings: Booking[] = (bookingsData || []).map(b => ({
+          id: b.id,
+          eventType: b.event_type,
+          eventDate: b.event_date,
+          venue: b.venue,
+          budget: Number(b.budget),
+          guestCount: b.guest_count,
+          status: b.status as any,
+          totalAmount: Number(b.total_amount),
+          createdAt: b.created_at,
+          customerName: b.customer_name,
+          customerEmail: b.customer_email,
+          customerPhone: b.customer_phone,
+          services: b.booking_items.map((item: any) => ({
+            service: {
+              id: 'unknown', // We don't have the real service ID linked correctly yet
+              name: item.service_name,
+              price: Number(item.unit_price),
+              // Fill other required Service fields with dummies or leave empty if UI tolerates
+              // The UI primarily uses service.name and service.price in the order summary in Checkout, 
+              // but here in Bookings page, let's see what is used.
+              // The Card below iterates over `booking.services`.
+              vendorName: 'Vendor', // Placeholder
+              category: 'Service',
+              description: '',
+              shortDescription: '',
+              priceType: 'fixed',
+              rating: 0,
+              reviewCount: 0,
+              images: [],
+              vendorId: '',
+              location: '',
+              features: [],
+              available: true
+            },
+            quantity: item.quantity
+          }))
+        }));
+
+        setBookings(mappedBookings);
+      } catch (err) {
+        console.error('Unexpected error:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    if (user) {
+      fetchBookings();
+    } else if (!authLoading) {
+      setLoading(false);
+    }
+  }, [user, authLoading]);
+
+
+  if (authLoading || loading) {
     return (
       <Layout>
-        <div className="container mx-auto px-4 py-20 text-center">
-          <h1 className="font-display text-3xl font-bold mb-4">Sign In Required</h1>
-          <p className="text-muted-foreground mb-8">Please sign in to view your bookings.</p>
-          <Link to="/auth?redirect=/bookings">
-            <Button variant="gold" size="lg">
-              Sign In
-            </Button>
-          </Link>
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-gold" />
         </div>
       </Layout>
     );
   }
 
-  if (bookings.length === 0) {
+  if (!isAuthenticated) {
     return (
       <Layout>
-        <div className="container mx-auto px-4 py-20 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-md mx-auto"
-          >
-            <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center mx-auto mb-6">
-              <Package className="w-12 h-12 text-muted-foreground" />
-            </div>
-            <h1 className="font-display text-3xl font-bold mb-4">No Bookings Yet</h1>
-            <p className="text-muted-foreground mb-8">
-              You haven't made any bookings yet. Start exploring our services to create your perfect event!
-            </p>
-            <Link to="/services">
-              <Button variant="gold" size="lg">
-                Browse Services
-              </Button>
-            </Link>
-          </motion.div>
+        <div className="min-h-[60vh] flex flex-col items-center justify-center p-4 text-center">
+          <h2 className="text-2xl font-bold mb-4">Please sign in to view your bookings</h2>
+          <Button onClick={() => navigate('/auth')} variant="gold">
+            Sign In
+          </Button>
         </div>
       </Layout>
     );
@@ -75,109 +119,131 @@ export default function Bookings() {
 
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-8">
-        {/* Back Button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate(-1)}
-          className="mb-4 gap-2 text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back
-        </Button>
+      <div className="min-h-screen py-8 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8"
+          >
+            <h1 className="font-display text-3xl md:text-4xl font-bold mb-2">My Bookings</h1>
+            <p className="text-muted-foreground">Track and manage your event bookings</p>
+          </motion.div>
 
-        <h1 className="font-display text-3xl md:text-4xl font-bold mb-8">
-          My <span className="text-gold">Bookings</span>
-        </h1>
+          <AnimatePresence>
+            {bookings.length === 0 ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex flex-col items-center justify-center py-16 bg-card rounded-2xl border border-dashed border-border"
+              >
+                <div className="w-16 h-16 rounded-full bg-gold/10 flex items-center justify-center mb-4">
+                  <Calendar className="w-8 h-8 text-gold" />
+                </div>
+                <h2 className="text-xl font-semibold mb-2">No bookings yet</h2>
+                <p className="text-muted-foreground mb-6 text-center max-w-sm">
+                  You haven't made any bookings yet. Start exploring our services to plan your perfect event.
+                </p>
+                <Link to="/services">
+                  <Button variant="gold" className="gap-2">
+                    Browse Services
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </Link>
+              </motion.div>
+            ) : (
+              <div className="grid gap-6">
+                {bookings.map((booking, index) => (
+                  <motion.div
+                    key={booking.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <Card className="overflow-hidden border-border hover:border-gold/50 transition-colors">
+                      <CardContent className="p-0">
+                        <div className="flex flex-col md:flex-row">
+                          {/* Date & Status Section */}
+                          <div className="bg-muted/50 p-6 md:w-64 flex flex-col justify-center border-b md:border-b-0 md:border-r border-border">
+                            <div className="mb-4">
+                              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${booking.status === 'confirmed'
+                                  ? 'bg-green-500/10 text-green-500 border-green-500/20'
+                                  : booking.status === 'pending'
+                                    ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
+                                    : 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                                }`}>
+                                {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                              </span>
+                            </div>
+                            <h3 className="font-display text-2xl font-bold mb-1">
+                              {format(new Date(booking.eventDate), 'dd')}
+                            </h3>
+                            <p className="text-muted-foreground uppercase tracking-wider text-sm font-medium mb-1">
+                              {format(new Date(booking.eventDate), 'MMM yyyy')}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {format(new Date(booking.eventDate), 'EEEE')}
+                            </p>
+                          </div>
 
-        <div className="space-y-6">
-          {bookings.map((booking, index) => (
-            <motion.div
-              key={booking.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="p-6 bg-card rounded-xl border"
-            >
-              <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-6">
-                <div>
-                  <div className="flex items-center gap-3 mb-2">
-                    <h2 className="font-display text-xl font-semibold">{booking.eventType}</h2>
-                    <Badge className={statusColors[booking.status]}>
-                      {statusLabels[booking.status]}
-                    </Badge>
-                  </div>
-                  <p className="text-muted-foreground text-sm">Booking ID: {booking.id}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-gold font-display text-2xl font-bold">
-                    {formatPrice(booking.totalAmount)}
-                  </p>
-                  <p className="text-muted-foreground text-sm">
-                    Booked on {format(new Date(booking.createdAt), 'MMM d, yyyy')}
-                  </p>
-                </div>
+                          {/* Details Section */}
+                          <div className="flex-1 p-6">
+                            <div className="grid md:grid-cols-2 gap-6 mb-6">
+                              <div>
+                                <h3 className="font-semibold text-lg mb-2">{booking.eventType}</h3>
+                                <div className="space-y-2 text-sm text-muted-foreground">
+                                  <div className="flex items-center gap-2">
+                                    <MapPin className="w-4 h-4 text-gold" />
+                                    <span>{booking.venue}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Users className="w-4 h-4 text-gold" />
+                                    <span>{booking.guestCount} Guests</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Clock className="w-4 h-4 text-gold" />
+                                    <span>Booked on {format(new Date(booking.createdAt), 'MMM d, yyyy')}</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="space-y-4">
+                                <div>
+                                  <h4 className="font-medium mb-2 text-sm">Services Included</h4>
+                                  <div className="space-y-2">
+                                    {booking.services.map((item: any, i: 0) => (
+                                      <div key={i} className="flex items-center justify-between text-sm bg-muted/30 p-2 rounded">
+                                        <div className="flex items-center gap-2">
+                                          <Package className="w-3 h-3 text-gold" />
+                                          <span>{item.service.name}</span>
+                                          <span className="text-xs text-muted-foreground">x{item.quantity}</span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between pt-4 border-t border-border">
+                              <div>
+                                <p className="text-sm text-muted-foreground">Total Amount</p>
+                                <p className="font-display text-xl font-bold text-gold">
+                                  {new Intl.NumberFormat('en-NG', {
+                                    style: 'currency',
+                                    currency: 'NGN'
+                                  }).format(booking.totalAmount)}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
               </div>
-
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                  <CalendarDays className="w-5 h-5 text-gold" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Event Date</p>
-                    <p className="font-medium">
-                      {format(new Date(booking.eventDate), 'MMM d, yyyy')}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                  <MapPin className="w-5 h-5 text-gold" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Venue</p>
-                    <p className="font-medium truncate">{booking.venue}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                  <Users className="w-5 h-5 text-gold" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Guests</p>
-                    <p className="font-medium">{booking.guestCount || 'Not specified'}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                  <Clock className="w-5 h-5 text-gold" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Status</p>
-                    <p className="font-medium">{statusLabels[booking.status]}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="font-semibold mb-3">Booked Services ({booking.services.length})</h3>
-                <div className="flex flex-wrap gap-3">
-                  {booking.services.map((item) => (
-                    <div
-                      key={item.service.id}
-                      className="flex items-center gap-3 p-2 bg-muted/50 rounded-lg"
-                    >
-                      <img
-                        src={item.service.images[0]}
-                        alt={item.service.name}
-                        className="w-10 h-10 object-cover rounded"
-                      />
-                      <div>
-                        <p className="text-sm font-medium truncate max-w-[150px]">
-                          {item.service.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          ))}
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </Layout>
