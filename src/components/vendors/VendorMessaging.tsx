@@ -190,7 +190,22 @@ export function VendorMessaging({ isOpen, onClose, initialVendorId }: VendorMess
       if (error) throw error;
 
       setNewMessage('');
-      // Optimistic update could happen here, but Realtime/Fetch handles it
+
+      // Simulate Vendor Reply (Demo Mode)
+      // in a real app, this would be an Edge Function or the real vendor replying
+      setTimeout(async () => {
+        const { error: replyError } = await supabase
+          .from('vendor_messages')
+          .insert({
+            vendor_id: activeConversation,
+            user_id: user.id,
+            sender_type: 'vendor',
+            message: "Thanks for your message! I'm currently reviewing your request and will get back to you shortly.",
+            read: false
+          });
+
+        if (replyError) console.error('Auto-reply failed:', replyError);
+      }, 2000);
 
     } catch (err) {
       console.error('Failed to send message:', err);
@@ -214,28 +229,38 @@ export function VendorMessaging({ isOpen, onClose, initialVendorId }: VendorMess
           animate={{ x: 0 }}
           exit={{ x: '100%' }}
           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-          className="fixed right-0 top-0 bottom-0 w-full md:w-[400px] lg:w-[450px] bg-card border-l border-border shadow-elevated"
+          className="fixed right-0 top-0 h-[100dvh] w-full md:w-[400px] lg:w-[450px] bg-background md:bg-card border-l border-border shadow-elevated flex flex-col overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-border">
+          <div className="flex items-center justify-between p-3 md:p-4 border-b border-border bg-background/95 backdrop-blur z-10 shadow-sm relative">
             <div className="flex items-center gap-3">
               {activeConversation && (
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setActiveConversation(null)}
-                  className="md:hidden"
+                  className="md:hidden -ml-2"
                 >
-                  <ChevronLeft className="w-5 h-5" />
+                  <ChevronLeft className="w-6 h-6" />
                 </Button>
               )}
-              <MessageCircle className="w-5 h-5 text-gold" />
-              <h2 className="font-display text-lg font-semibold">
-                {activeConvo ? activeConvo.vendorName : 'Messages'}
-              </h2>
+              <div className="relative">
+                <MessageCircle className="w-5 h-5 text-gold" />
+                {activeConvo?.unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-background" />
+                )}
+              </div>
+              <div>
+                <h2 className="font-display text-lg font-semibold leading-none">
+                  {activeConvo ? activeConvo.vendorName : 'Messages'}
+                </h2>
+                {activeConvo && (
+                  <p className="text-xs text-muted-foreground mt-0.5">Online</p>
+                )}
+              </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose}>
+            <Button variant="ghost" size="icon" onClick={onClose} className="-mr-2 md:mr-0">
               <X className="w-5 h-5" />
             </Button>
           </div>
@@ -243,7 +268,7 @@ export function VendorMessaging({ isOpen, onClose, initialVendorId }: VendorMess
           {/* Content */}
           {!activeConversation ? (
             // Conversation List
-            <div className="h-[calc(100%-65px)] overflow-y-auto">
+            <div className="flex-1 overflow-y-auto min-h-0">
               {conversations.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center p-8">
                   <MessageCircle className="w-12 h-12 text-muted-foreground mb-4" />
@@ -286,7 +311,7 @@ export function VendorMessaging({ isOpen, onClose, initialVendorId }: VendorMess
             </div>
           ) : (
             // Active Conversation
-            <div className="flex flex-col h-[calc(100%-65px)]">
+            <div className="flex flex-col flex-1 min-h-0">
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {activeConvo?.messages.map((msg) => (
@@ -320,32 +345,42 @@ export function VendorMessaging({ isOpen, onClose, initialVendorId }: VendorMess
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Input */}
-              <div className="p-4 border-t border-border">
+              {/* Input Area */}
+              <div className="p-3 md:p-4 bg-background border-t border-border pb-safe">
                 {isAuthenticated ? (
                   <form
                     onSubmit={(e) => {
                       e.preventDefault();
                       handleSendMessage();
                     }}
-                    className="flex items-center gap-2"
+                    className="flex items-end gap-2"
                   >
-                    <Input
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      placeholder="Type a message..."
-                      className="flex-1"
-                    />
-                    <Button type="submit" variant="gold" size="icon" disabled={!newMessage.trim()}>
-                      <Send className="w-4 h-4" />
+                    <div className="relative flex-1">
+                      <Input
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        placeholder="Type a message..."
+                        className="w-full rounded-2xl bg-muted/30 border-muted-foreground/20 focus-visible:ring-gold/30 focus-visible:border-gold/50 min-h-[44px] py-3 px-4 resize-none shadow-inner text-base"
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      variant="gold"
+                      size="icon"
+                      className="h-11 w-11 rounded-xl shadow-md shrink-0 mb-[1px]"
+                      disabled={!newMessage.trim()}
+                    >
+                      <Send className="w-5 h-5" />
                     </Button>
                   </form>
                 ) : (
-                  <div className="flex items-center gap-3">
-                    <p className="text-sm text-muted-foreground flex-1">Sign in to send messages</p>
-                    <Button variant="gold" onClick={handleSignIn} className="gap-2">
+                  <div className="flex flex-col items-center gap-3 p-4 bg-muted/30 rounded-xl border border-dashed border-border">
+                    <p className="text-sm text-muted-foreground text-center">
+                      Join the conversation to ask about availability and pricing.
+                    </p>
+                    <Button variant="gold" onClick={handleSignIn} className="gap-2 w-full sm:w-auto">
                       <LogIn className="w-4 h-4" />
-                      Sign In
+                      Sign In to Chat
                     </Button>
                   </div>
                 )}

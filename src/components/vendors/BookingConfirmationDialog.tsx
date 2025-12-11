@@ -31,6 +31,7 @@ interface BookingConfirmationDialogProps {
   selectedDate: Date;
   userEmail?: string;
   userName?: string;
+  onBookingSuccess?: () => void;
 }
 
 const eventTypes = [
@@ -52,7 +53,8 @@ export function BookingConfirmationDialog({
   vendorId,
   selectedDate,
   userEmail = '',
-  userName = ''
+  userName = '',
+  onBookingSuccess
 }: BookingConfirmationDialogProps) {
   const [formData, setFormData] = useState({
     name: userName,
@@ -66,7 +68,7 @@ export function BookingConfirmationDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name || !formData.email) {
       toast.error('Please fill in required fields');
       return;
@@ -75,35 +77,72 @@ export function BookingConfirmationDialog({
     setIsSubmitting(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('send-booking-confirmation', {
-        body: {
-          customerName: formData.name,
-          customerEmail: formData.email,
-          customerPhone: formData.phone,
-          vendorName: vendorName,
-          eventDate: format(selectedDate, 'EEEE, MMMM d, yyyy'),
-          eventType: formData.eventType,
-          notes: formData.notes
-        }
-      });
+      // 1. Get current user
+      const { data: { user } } = await supabase.auth.getUser();
 
-      if (error) throw error;
+      if (!user) {
+        toast.error('You must be logged in to confirm a booking');
+        return;
+      }
+
+      // 2. Insert into bookings table directly
+      const { error: bookingError } = await supabase
+        .from('bookings')
+        .insert({
+          user_id: user.id,
+          event_type: formData.eventType,
+          event_date: format(selectedDate, 'yyyy-MM-dd'),
+          customer_name: formData.name,
+          customer_email: formData.email,
+          customer_phone: formData.phone,
+          notes: formData.notes,
+          status: 'pending',
+          total_amount: 0
+        });
+
+      if (bookingError) throw bookingError;
+
+      // 3. Initiate Conversation (Auto-send message)
+      const { data: vendorData } = await supabase
+        .from('vendors')
+        .select('id')
+        .eq('name', vendorName)
+        .single();
+
+      if (vendorData) {
+        const messageContent = `Hi, I requested a booking for ${format(selectedDate, 'MMMM d, yyyy')} (${formData.eventType}). ${formData.notes ? `\n\nNote: ${formData.notes}` : ''}`;
+
+        await supabase
+          .from('vendor_messages')
+          .insert({
+            vendor_id: vendorData.id,
+            user_id: user.id,
+            sender_type: 'user',
+            message: messageContent,
+            read: true
+          });
+      }
 
       setIsSuccess(true);
-      toast.success('Booking request sent!', {
-        description: 'Check your email for confirmation'
+      toast.success('Booking request sent & Message sent!', {
+        description: 'You can continue the conversation in the messages tab.'
       });
 
       // Reset after showing success
       setTimeout(() => {
         setIsSuccess(false);
         setFormData({ name: userName, email: userEmail, phone: '', eventType: '', notes: '' });
-        onClose();
-      }, 2500);
+
+        if (onBookingSuccess) {
+          onBookingSuccess();
+        } else {
+          onClose();
+        }
+      }, 1500);
 
     } catch (error: any) {
       console.error('Booking error:', error);
-      toast.error('Failed to send booking request', {
+      toast.error('Failed to save booking', {
         description: error.message || 'Please try again later'
       });
     } finally {

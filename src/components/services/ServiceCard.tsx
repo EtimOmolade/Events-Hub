@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Star, Heart, ShoppingBag, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,8 @@ interface ServiceCardProps {
 }
 
 export function ServiceCard({ service }: ServiceCardProps) {
-  const { addToCart, addToWishlist, removeFromWishlist, isInWishlist } = useStore();
+  const { addToCart, addToWishlist, removeFromWishlist, isInWishlist, isAuthenticated } = useStore();
+  const navigate = useNavigate();
   const [isHovered, setIsHovered] = useState(false);
   const inWishlist = isInWishlist(service.id);
 
@@ -21,6 +22,13 @@ export function ServiceCard({ service }: ServiceCardProps) {
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
+    if (!isAuthenticated) {
+      toast.error('Please sign in to add to cart');
+      navigate('/auth');
+      return;
+    }
+
     addToCart(service);
     toast.success(`${service.name} added to cart`);
   };
@@ -28,6 +36,13 @@ export function ServiceCard({ service }: ServiceCardProps) {
   const handleToggleWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
+    if (!isAuthenticated) {
+      toast.error('Please sign in to manage wishlist');
+      navigate('/auth');
+      return;
+    }
+
     if (inWishlist) {
       removeFromWishlist(service.id);
       toast.info('Removed from wishlist');
@@ -62,11 +77,10 @@ export function ServiceCard({ service }: ServiceCardProps) {
           {/* Wishlist Button */}
           <button
             onClick={handleToggleWishlist}
-            className={`absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
-              inWishlist
-                ? 'bg-destructive text-destructive-foreground'
-                : 'bg-background/90 backdrop-blur-sm text-foreground hover:bg-gold hover:text-rich-black'
-            }`}
+            className={`absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${inWishlist
+              ? 'bg-destructive text-destructive-foreground'
+              : 'bg-background/90 backdrop-blur-sm text-foreground hover:bg-gold hover:text-rich-black'
+              }`}
           >
             <Heart className={`w-5 h-5 ${inWishlist ? 'fill-current' : ''}`} />
           </button>

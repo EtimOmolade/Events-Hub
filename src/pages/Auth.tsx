@@ -14,7 +14,7 @@ export default function Auth() {
   const [searchParams] = useSearchParams();
   const redirect = searchParams.get('redirect') || '/';
   const navigate = useNavigate();
-  const { signIn, isAuthenticated } = useAuth();
+  const { signIn, signUp, isAuthenticated } = useAuth();
 
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
@@ -89,17 +89,8 @@ export default function Auth() {
         toast.success('Welcome back!');
         navigate(redirect);
       } else {
-        // Signup flow with full_name in metadata
-        const { data, error } = await supabase.auth.signUp({
-          email: formData.email,
-          password: formData.password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-            data: {
-              full_name: formData.name,
-            },
-          },
-        });
+        // Signup flow
+        const { data, error } = await signUp(formData.email, formData.password, formData.name);
 
         if (error) {
           if (error.message.includes('User already registered')) {
@@ -112,8 +103,8 @@ export default function Auth() {
         }
 
         if (data.user) {
-          toast.success('Account created successfully!');
-          navigate(redirect);
+          toast.success('Account created successfully! Please sign in.');
+          setIsLogin(true); // Switch to login view
         }
       }
     } catch (err) {

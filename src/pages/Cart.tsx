@@ -1,8 +1,10 @@
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useStore } from '@/store/useStore';
 import { formatPrice } from '@/data/services';
 import { toast } from 'sonner';
@@ -14,16 +16,48 @@ export default function Cart() {
 
   const { cart, removeFromCart, updateCartQuantity, getCartTotal, isAuthenticated } = useStore();
 
-  const total = getCartTotal();
+  // State for selected items (by service ID)
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+
+  // Derived totals based on SELECTION
+  const selectedCartItems = cart.filter(item => selectedItems.includes(item.service.id));
+
+  const calculateSelectedTotal = () => {
+    return selectedCartItems.reduce((total, item) => total + (item.service.price * item.quantity), 0);
+  };
+
+  const total = calculateSelectedTotal();
   const serviceFee = Math.round(total * 0.05);
   const grandTotal = total + serviceFee;
 
+  const toggleSelection = (serviceId: string) => {
+    setSelectedItems(prev =>
+      prev.includes(serviceId)
+        ? prev.filter(id => id !== serviceId)
+        : [...prev, serviceId]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedItems.length === cart.length) {
+      setSelectedItems([]);
+    } else {
+      setSelectedItems(cart.map(item => item.service.id));
+    }
+  };
+
   const handleCheckout = () => {
+    if (selectedItems.length === 0) {
+      toast.error('Please select at least one item to checkout');
+      return;
+    }
+
     if (!isAuthenticated) {
       toast.error('You need to sign in to checkout');
       navigate('/auth?redirect=/checkout');
     } else {
-      navigate('/checkout');
+      // Pass the selected IDs to checkout
+      navigate('/checkout', { state: { selectedServiceIds: selectedItems } });
     }
   };
 
@@ -84,14 +118,39 @@ export default function Cart() {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-4">
+
+            {/* Select All Header */}
+            <div className="flex items-center gap-3 p-4 bg-card rounded-xl border">
+              <Checkbox
+                id="select-all"
+                checked={selectedItems.length === cart.length && cart.length > 0}
+                onCheckedChange={toggleSelectAll}
+              />
+              <label
+                htmlFor="select-all"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer select-none"
+              >
+                Select All Items ({cart.length})
+              </label>
+            </div>
+
             {cart.map((item, index) => (
               <motion.div
                 key={item.service.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="flex flex-col sm:flex-row gap-4 p-4 bg-card rounded-xl border"
+                className={`flex flex-col sm:flex-row gap-4 p-4 rounded-xl border transition-colors ${selectedItems.includes(item.service.id) ? 'bg-card border-gold/40' : 'bg-card/50 border-border'
+                  }`}
               >
+                {/* Checkbox for Row */}
+                <div className="flex items-start sm:items-center pt-1 sm:pt-0">
+                  <Checkbox
+                    checked={selectedItems.includes(item.service.id)}
+                    onCheckedChange={() => toggleSelection(item.service.id)}
+                  />
+                </div>
+
                 <Link to={`/service/${item.service.id}`} className="shrink-0">
                   <img
                     src={item.service.images[0]}
@@ -122,9 +181,8 @@ export default function Cart() {
                         }
                         updateCartQuantity(item.service.id, item.quantity - 1);
                       }}
-                      className={`w-8 h-8 flex items-center justify-center hover:bg-muted transition-colors ${
-                        !isAuthenticated ? 'cursor-not-allowed opacity-50' : ''
-                      }`}
+                      className={`w-8 h-8 flex items-center justify-center hover:bg-muted transition-colors ${!isAuthenticated ? 'cursor-not-allowed opacity-50' : ''
+                        }`}
                     >
                       <Minus className="w-4 h-4" />
                     </button>
@@ -138,9 +196,8 @@ export default function Cart() {
                         }
                         updateCartQuantity(item.service.id, item.quantity + 1);
                       }}
-                      className={`w-8 h-8 flex items-center justify-center hover:bg-muted transition-colors ${
-                        !isAuthenticated ? 'cursor-not-allowed opacity-50' : ''
-                      }`}
+                      className={`w-8 h-8 flex items-center justify-center hover:bg-muted transition-colors ${!isAuthenticated ? 'cursor-not-allowed opacity-50' : ''
+                        }`}
                     >
                       <Plus className="w-4 h-4" />
                     </button>
@@ -155,10 +212,13 @@ export default function Cart() {
                         return;
                       }
                       removeFromCart(item.service.id);
+                      // Also remove from selection if present
+                      if (selectedItems.includes(item.service.id)) {
+                        toggleSelection(item.service.id);
+                      }
                     }}
-                    className={`text-destructive hover:text-destructive ${
-                      !isAuthenticated ? 'cursor-not-allowed opacity-50' : ''
-                    }`}
+                    className={`text-destructive hover:text-destructive ${!isAuthenticated ? 'cursor-not-allowed opacity-50' : ''
+                      }`}
                   >
                     <Trash2 className="w-4 h-4" />
                     <span className="sm:hidden ml-2">Remove</span>
@@ -179,6 +239,10 @@ export default function Cart() {
               <h2 className="font-display text-xl font-semibold mb-6">Order Summary</h2>
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between">
+                  <span className="text-muted-foreground">Selected Items</span>
+                  <span className="font-medium">{selectedItems.length}</span>
+                </div>
+                <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
                   <span className="font-medium">{formatPrice(total)}</span>
                 </div>
@@ -198,9 +262,10 @@ export default function Cart() {
                 size="lg"
                 className="w-full group"
                 onClick={handleCheckout}
+                disabled={selectedItems.length === 0}
               >
-                Proceed to Checkout
-                <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+                Proceed to Checkout ({selectedItems.length})
+                <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1 ml-2" />
               </Button>
               <Link to="/services">
                 <Button variant="ghost" className="w-full mt-3">

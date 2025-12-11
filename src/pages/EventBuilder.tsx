@@ -42,7 +42,7 @@ const initialState: BuilderState = {
 
 export default function EventBuilder() {
   const navigate = useNavigate();
-  const { addToCart } = useStore();
+  const { addToCart, isAuthenticated } = useStore();
   const [currentStep, setCurrentStep] = useState(1);
   const [state, setState] = useState<BuilderState>(initialState);
   const [packages, setPackages] = useState<GeneratedPackage[]>([]);
@@ -103,6 +103,11 @@ export default function EventBuilder() {
   };
 
   const handleAddToCart = (pkg: GeneratedPackage) => {
+    if (!isAuthenticated) {
+      toast.error('Please sign in to add packages to cart');
+      navigate('/auth');
+      return;
+    }
     pkg.services.forEach(service => addToCart(service));
     toast.success(`${pkg.name} added to cart!`);
   };

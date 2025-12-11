@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Star, Heart, ShoppingBag, MapPin, Check, ChevronLeft, ChevronRight, Share2 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
@@ -19,7 +19,8 @@ export default function ServiceDetail() {
   const [quantity, setQuantity] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
 
-  const { addToCart, addToWishlist, removeFromWishlist, isInWishlist } = useStore();
+  const { addToCart, addToWishlist, removeFromWishlist, isInWishlist, isAuthenticated } = useStore();
+  const navigate = useNavigate();
   const inWishlist = service ? isInWishlist(service.id) : false;
 
   const { scrollY } = useScroll();
@@ -77,11 +78,21 @@ export default function ServiceDetail() {
     .slice(0, 3);
 
   const handleAddToCart = () => {
+    if (!isAuthenticated) {
+      toast.error('Please sign in to add to cart');
+      navigate('/auth');
+      return;
+    }
     addToCart(service, quantity);
     toast.success(`${service.name} added to cart`);
   };
 
   const handleToggleWishlist = () => {
+    if (!isAuthenticated) {
+      toast.error('Please sign in to manage wishlist');
+      navigate('/auth');
+      return;
+    }
     if (inWishlist) {
       removeFromWishlist(service.id);
       toast.info('Removed from wishlist');
@@ -176,9 +187,8 @@ export default function ServiceDetail() {
                   <button
                     key={index}
                     onClick={() => setSelectedImageIndex(index)}
-                    className={`shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${
-                      selectedImageIndex === index ? 'border-gold' : 'border-transparent'
-                    }`}
+                    className={`shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${selectedImageIndex === index ? 'border-gold' : 'border-transparent'
+                      }`}
                   >
                     <img src={image} alt="" className="w-full h-full object-cover" />
                   </button>

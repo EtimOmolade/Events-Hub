@@ -30,6 +30,7 @@ import Account from "./pages/Account";
 import NotFound from "./pages/NotFound";
 import ReceiptView from "./pages/ReceiptView";
 import { RealtimeSync } from "./components/RealtimeSync";
+import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -59,17 +60,23 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/services" element={<Services />} />
             <Route path="/service/:id" element={<ServiceDetail />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/wishlist" element={<Wishlist />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/checkout" element={<Checkout />} />
-            <Route path="/bookings" element={<Bookings />} />
             <Route path="/categories" element={<Categories />} />
             <Route path="/vendors" element={<Vendors />} />
             <Route path="/vendor/:id" element={<VendorDetail />} />
-            <Route path="/ai-planner" element={<AIPlanner />} />
-            <Route path="/event-builder" element={<EventBuilder />} />
-            <Route path="/saved-plans" element={<SavedPlans />} />
+
+            {/* Protected Routes */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/wishlist" element={<Wishlist />} />
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/bookings" element={<Bookings />} />
+              <Route path="/ai-planner" element={<AIPlanner />} />
+              <Route path="/event-builder" element={<EventBuilder />} />
+              <Route path="/saved-plans" element={<SavedPlans />} />
+              <Route path="/account" element={<Account />} />
+            </Route>
+
             <Route path="/receipt/:id" element={<ReceiptView />} />
             <Route path="/admin" element={<AdminServices />} />
             <Route path="/admin/login" element={<AdminLogin />} />
@@ -79,7 +86,6 @@ const App = () => (
             <Route path="/about" element={<About />} />
             <Route path="/about-us" element={<About />} />
             <Route path="/contact" element={<Contact />} />
-            <Route path="/account" element={<Account />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <FloatingAIWidget />

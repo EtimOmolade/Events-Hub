@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
-  Star, MapPin, BadgeCheck, ArrowLeft, MessageCircle, 
-  Calendar, Image, Briefcase, Phone 
+import {
+  Star, MapPin, BadgeCheck, ArrowLeft, MessageCircle,
+  Calendar, Image, Briefcase, Phone
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -23,7 +23,7 @@ export default function VendorDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useStore();
-  
+
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isMessagingOpen, setIsMessagingOpen] = useState(false);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
@@ -46,7 +46,11 @@ export default function VendorDetail() {
   }
 
   const handleContactVendor = () => {
-    // Open messaging regardless of auth - the messaging component can handle auth check
+    if (!isAuthenticated) {
+      toast.error('Please sign in to message vendors');
+      navigate('/auth');
+      return;
+    }
     setIsMessagingOpen(true);
   };
 
@@ -104,7 +108,7 @@ export default function VendorDetail() {
                       {vendor.name}
                     </h1>
                     <p className="text-gold font-medium mb-2">{vendor.specialty}</p>
-                    
+
                     <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-4">
                       <div className="flex items-center gap-1">
                         <Star className="w-4 h-4 text-gold fill-gold" />
@@ -145,21 +149,21 @@ export default function VendorDetail() {
           {/* Tabs Content */}
           <Tabs defaultValue="services" className="pb-12">
             <TabsList className="w-full justify-start border-b border-border rounded-none bg-transparent h-auto p-0 mb-8">
-              <TabsTrigger 
-                value="services" 
+              <TabsTrigger
+                value="services"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-gold data-[state=active]:bg-transparent px-4 py-3"
               >
                 <Briefcase className="w-4 h-4 mr-2" />
                 Services ({vendorServices.length})
               </TabsTrigger>
-              <TabsTrigger 
+              <TabsTrigger
                 value="portfolio"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-gold data-[state=active]:bg-transparent px-4 py-3"
               >
                 <Image className="w-4 h-4 mr-2" />
                 Portfolio ({portfolio.length})
               </TabsTrigger>
-              <TabsTrigger 
+              <TabsTrigger
                 value="availability"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-gold data-[state=active]:bg-transparent px-4 py-3"
               >
@@ -199,13 +203,13 @@ export default function VendorDetail() {
                   selectedDate={selectedDate}
                   onSelectDate={(date) => setSelectedDate(date)}
                 />
-                
+
                 <div className="space-y-4">
                   <div className="bg-card border border-border rounded-xl p-6">
                     <h3 className="font-display text-lg font-semibold mb-4">
                       Book {vendor.name}
                     </h3>
-                    
+
                     {selectedDate ? (
                       <div className="space-y-4">
                         <p className="text-sm text-muted-foreground">
@@ -263,6 +267,11 @@ export default function VendorDetail() {
           selectedDate={selectedDate}
           userEmail={user?.email}
           userName={user?.name}
+          onBookingSuccess={() => {
+            setIsBookingOpen(false);
+            // Small delay to allow dialog to close nicely before drawer opens, or just immediate.
+            setTimeout(() => setIsMessagingOpen(true), 100);
+          }}
         />
       )}
     </Layout>

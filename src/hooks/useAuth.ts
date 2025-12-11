@@ -8,8 +8,8 @@ interface UseAuthReturn {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  signUp: (email: string, password: string, fullName: string) => Promise<void>;
-  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, fullName: string) => Promise<{ data: any; error: any }>;
+  signIn: (email: string, password: string) => Promise<{ data: any; error: any }>;
   signOut: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
 }
@@ -58,7 +58,7 @@ export function useAuth(): UseAuthReturn {
   const signUp = async (email: string, password: string, fullName: string) => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -67,12 +67,9 @@ export function useAuth(): UseAuthReturn {
           },
         },
       });
-
-      if (error) throw error;
-
-      navigate('/auth?tab=login');
+      return { data, error };
     } catch (error) {
-      throw error;
+      return { data: null, error };
     } finally {
       setIsLoading(false);
     }
@@ -81,16 +78,13 @@ export function useAuth(): UseAuthReturn {
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-
-      if (error) throw error;
-
-      navigate('/');
+      return { data, error };
     } catch (error) {
-      throw error;
+      return { data: null, error };
     } finally {
       setIsLoading(false);
     }

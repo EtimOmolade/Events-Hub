@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import confetti from 'canvas-confetti';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CalendarDays, MapPin, Users, Wallet, CreditCard, Building, Loader2, Check, Sparkles, Heart, FileText } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
@@ -31,8 +31,16 @@ const eventTypes = [
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { cart, getCartTotal, clearCart, addBooking } = useStore();
+  const location = useLocation();
+  const { cart, removeFromCart, addBooking } = useStore();
   const { user, isAuthenticated } = useAuth();
+
+  // Get selected items from navigation state, or fallback to all cart items
+  const selectedServiceIds = location.state?.selectedServiceIds as string[] | undefined;
+  const checkoutItems = selectedServiceIds
+    ? cart.filter(item => selectedServiceIds.includes(item.service.id))
+    : cart;
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [step, setStep] = useState<'details' | 'payment' | 'success'>('details');
   const [showReceiptModal, setShowReceiptModal] = useState(false);
@@ -51,6 +59,16 @@ export default function Checkout() {
     paymentMethod: 'card',
   });
 
+  // Redirect if no items to checkout
+  useEffect(() => {
+    if (cart.length === 0) {
+      navigate('/cart');
+    } else if (checkoutItems.length === 0) {
+      // If we have items in cart but none selected for checkout (and we are here), redirect
+      navigate('/cart');
+    }
+  }, [cart, checkoutItems, navigate]);
+
   // Update form data when user loads
   useEffect(() => {
     if (user) {
@@ -62,7 +80,8 @@ export default function Checkout() {
     }
   }, [user]);
 
-  const total = getCartTotal();
+  // Calculate totals based on CHECKOUT items only
+  const total = checkoutItems.reduce((sum, item) => sum + (item.service.price * item.quantity), 0);
   const serviceFee = Math.round(total * 0.05);
   const grandTotal = total + serviceFee;
 
@@ -154,13 +173,12 @@ export default function Checkout() {
 
     const bookingId = bookingData.id;
 
-    // Create booking items
-    const bookingItems = cart.map(item => ({
+    // Create booking items from CHECKOUT ITEMS
+    const bookingItems = checkoutItems.map(item => ({
       booking_id: bookingId,
       service_name: item.service.name,
       quantity: item.quantity,
       unit_price: item.service.price,
-      // We skip service_id for now as we are using static services not in DB
     }));
 
     const { error: itemsError } = await supabase
@@ -171,10 +189,10 @@ export default function Checkout() {
       console.error('Error creating booking items:', itemsError);
     }
 
-    // Keep local store in sync for now (optional, but good for immediate UI feedback if we navigated back to a store-based view)
+    // Keep local store in sync
     const booking: Booking = {
       id: bookingId,
-      services: cart,
+      services: checkoutItems,
       eventType: formData.eventType,
       eventDate: formData.eventDate,
       venue: formData.venue,
@@ -190,8 +208,8 @@ export default function Checkout() {
 
     addBooking(booking);
 
-    // Create receipt items from cart
-    const receiptItems = cart.map(item => ({
+    // Create receipt items from CHECKOUT ITEMS
+    const receiptItems = checkoutItems.map(item => ({
       name: item.service.name,
       quantity: item.quantity,
       unitPrice: item.service.price,
@@ -203,7 +221,7 @@ export default function Checkout() {
     // Create receipt in database
     const { data: newReceipt, error } = await createReceipt({
       userId: user.id,
-      bookingId: bookingId, // Link to the real database booking
+      bookingId: bookingId,
       customerName: formData.customerName,
       customerEmail: formData.customerEmail,
       eventType: formData.eventType,
@@ -225,7 +243,9 @@ export default function Checkout() {
       setReceiptData(newReceipt);
     }
 
-    clearCart();
+    // Remove ONLY purchased items from cart
+    checkoutItems.forEach(item => removeFromCart(item.service.id));
+
     setIsProcessing(false);
 
     // Fire confetti celebration
@@ -553,7 +573,7 @@ export default function Checkout() {
                 <h2 className="font-display text-xl font-semibold mb-6">Order Summary</h2>
 
                 <div className="space-y-4 mb-6">
-                  {cart.map((item) => (
+                  {checkoutItems.map((item) => (
                     <div key={item.service.id} className="flex gap-3">
                       <div className="w-16 h-16 rounded-lg bg-muted overflow-hidden flex-shrink-0">
                         {item.service.images?.[0] && (
