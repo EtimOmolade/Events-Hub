@@ -29,6 +29,7 @@ import Contact from "./pages/Contact";
 import Account from "./pages/Account";
 import NotFound from "./pages/NotFound";
 import ReceiptView from "./pages/ReceiptView";
+import ResetPassword from "./pages/ResetPassword";
 import { RealtimeSync } from "./components/RealtimeSync";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 
@@ -61,6 +62,7 @@ const App = () => (
             <Route path="/services" element={<Services />} />
             <Route path="/service/:id" element={<ServiceDetail />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/categories" element={<Categories />} />
             <Route path="/vendors" element={<Vendors />} />
             <Route path="/vendor/:id" element={<VendorDetail />} />

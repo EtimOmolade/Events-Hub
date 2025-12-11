@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Mail, Lock, User, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, Loader2, Check, X } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,8 @@ export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -56,11 +58,14 @@ export default function Auth() {
       return;
     }
 
-    // Password validation
-    if (formData.password.length < 6) {
-      toast.error('Password must be at least 6 characters');
-      setIsLoading(false);
-      return;
+    // Password validation for sign up
+    if (!isLogin) {
+      const passwordErrors = validatePassword(formData.password);
+      if (passwordErrors.length > 0) {
+        toast.error(passwordErrors[0]);
+        setIsLoading(false);
+        return;
+      }
     }
 
     if (!isLogin && formData.password !== formData.confirmPassword) {
@@ -103,9 +108,73 @@ export default function Auth() {
         }
 
         if (data.user) {
-          toast.success('Account created successfully! Please sign in.');
+          toast.success('Account created successfully! Please check your email to confirm your account before signing in.', {
+            duration: 6000, // Show for 6 seconds to give users time to read
+          });
           setIsLogin(true); // Switch to login view
         }
+      }
+    } catch (err) {
+      toast.error('An unexpected error occurred. Please try again.');
+    }
+
+    setIsLoading(false);
+  };
+
+  // Password validation helper
+  const validatePassword = (password: string): string[] => {
+    const errors: string[] = [];
+
+    if (password.length < 8) {
+      errors.push('Password must be at least 8 characters');
+    }
+
+    if (!/\d/.test(password)) {
+      errors.push('Password must contain at least one digit');
+    }
+
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+      errors.push('Password must contain at least one symbol');
+    }
+
+    return errors;
+  };
+
+  // Check individual password requirements
+  const getPasswordRequirements = (password: string) => {
+    return [
+      { label: 'At least 8 characters', met: password.length >= 8 },
+      { label: 'Contains a digit', met: /\d/.test(password) },
+      { label: 'Contains a symbol', met: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) },
+    ];
+  };
+
+  // Handle forgot password
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(resetEmail)) {
+      toast.error('Please enter a valid email address');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success('Password reset email sent! Please check your inbox.', {
+          duration: 6000,
+        });
+        setShowForgotPassword(false);
+        setResetEmail('');
       }
     } catch (err) {
       toast.error('An unexpected error occurred. Please try again.');
@@ -199,6 +268,22 @@ export default function Auth() {
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
+              {!isLogin && formData.password && (
+                <div className="mt-2 space-y-1">
+                  {getPasswordRequirements(formData.password).map((req, index) => (
+                    <div key={index} className="flex items-center gap-2 text-sm">
+                      {req.met ? (
+                        <Check className="w-4 h-4 text-green-500" />
+                      ) : (
+                        <X className="w-4 h-4 text-muted-foreground" />
+                      )}
+                      <span className={req.met ? 'text-green-500' : 'text-muted-foreground'}>
+                        {req.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {!isLogin && (
@@ -222,7 +307,11 @@ export default function Auth() {
 
             {isLogin && (
               <div className="flex justify-end">
-                <button type="button" className="text-sm text-gold hover:underline">
+                <button
+                  type="button"
+                  onClick={() => setShowForgotPassword(true)}
+                  className="text-sm text-gold hover:underline"
+                >
                   Forgot password?
                 </button>
               </div>
@@ -258,6 +347,74 @@ export default function Auth() {
             </button>
           </p>
         </motion.div>
+
+        {/* Forgot Password Modal */}
+        {showForgotPassword && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+            onClick={() => setShowForgotPassword(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-background border border-border rounded-lg p-6 w-full max-w-md"
+            >
+              <h2 className="font-display text-2xl font-bold mb-2">Reset Password</h2>
+              <p className="text-muted-foreground mb-6">
+                Enter your email address and we'll send you a link to reset your password.
+              </p>
+
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="resetEmail">Email Address</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Input
+                      id="resetEmail"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      className="pl-10 h-12"
+                      required
+                      autoFocus
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowForgotPassword(false);
+                      setResetEmail('');
+                    }}
+                    className="flex-1"
+                    disabled={isLoading}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="gold"
+                    className="flex-1"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      'Send Reset Link'
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
       </div>
     </Layout>
   );
