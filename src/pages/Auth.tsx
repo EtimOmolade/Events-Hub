@@ -20,6 +20,7 @@ export default function Auth() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [showResendConfirmation, setShowResendConfirmation] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [formData, setFormData] = useState({
     name: '',
@@ -174,6 +175,41 @@ export default function Auth() {
           duration: 6000,
         });
         setShowForgotPassword(false);
+        setResetEmail('');
+      }
+    } catch (err) {
+      toast.error('An unexpected error occurred. Please try again.');
+    }
+
+    setIsLoading(false);
+  };
+
+  // Handle resend confirmation email
+  const handleResendConfirmation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(resetEmail)) {
+      toast.error('Please enter a valid email address');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: resetEmail,
+      });
+
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success('Confirmation email sent! Please check your inbox.', {
+          duration: 6000,
+        });
+        setShowResendConfirmation(false);
         setResetEmail('');
       }
     } catch (err) {
@@ -408,6 +444,74 @@ export default function Auth() {
                       <Loader2 className="w-5 h-5 animate-spin" />
                     ) : (
                       'Send Reset Link'
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Resend Confirmation Email Modal */}
+        {showResendConfirmation && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+            onClick={() => setShowResendConfirmation(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-background border border-border rounded-lg p-6 w-full max-w-md"
+            >
+              <h2 className="font-display text-2xl font-bold mb-2">Resend Confirmation Email</h2>
+              <p className="text-muted-foreground mb-6">
+                Enter your email address and we'll send you a new confirmation email.
+              </p>
+
+              <form onSubmit={handleResendConfirmation} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="resendEmail">Email Address</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Input
+                      id="resendEmail"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      className="pl-10 h-12"
+                      required
+                      autoFocus
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowResendConfirmation(false);
+                      setResetEmail('');
+                    }}
+                    className="flex-1"
+                    disabled={isLoading}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="gold"
+                    className="flex-1"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      'Resend Email'
                     )}
                   </Button>
                 </div>
