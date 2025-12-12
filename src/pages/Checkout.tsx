@@ -29,30 +29,108 @@ const eventTypes = [
   'Other',
 ];
 
+// Map Event Builder IDs to Checkout display names
+const eventTypeIdToName: Record<string, string> = {
+  'wedding': 'Wedding',
+  'birthday': 'Birthday Party',
+  'corporate': 'Corporate Event',
+  'baby-shower': 'Baby Shower',
+  'concert': 'Concert',
+  'anniversary': 'Anniversary',
+};
+
 export default function Checkout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { cart, removeFromCart, addBooking } = useStore();
   const { user, isAuthenticated } = useAuth();
 
-  // Get selected items from navigation state, or fallback to all cart items
+  // Get selected items and event type from navigation state
   const selectedServiceIds = location.state?.selectedServiceIds as string[] | undefined;
+  const builderState = location.state?.builderState;
+  const navigationEventType = location.state?.eventType as string | undefined;
+
   const checkoutItems = selectedServiceIds
     ? cart.filter(item => selectedServiceIds.includes(item.service.id))
     : cart;
+
+  // Get event type from navigation state OR from cart items
+  const builderEventType = builderState?.eventType;
+  const cartEventType = checkoutItems.find(item => item.eventType)?.eventType;
+  const rawEventType = builderEventType || navigationEventType || cartEventType || '';
+
+  // Convert Event Builder ID to display name
+  const preselectedEventType = eventTypeIdToName[rawEventType] || rawEventType;
+
+  console.log('Checkout: Navigation event type:', navigationEventType);
+  console.log('Checkout: Cart event type:', cartEventType);
+  console.log('Checkout: Raw event type:', rawEventType);
+  console.log('Checkout: Final event type (mapped):', preselectedEventType);
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [step, setStep] = useState<'details' | 'payment' | 'success'>('details');
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
 
+  // Also check cart items for event information (for services added directly)
+  const cartItemWithEventInfo = checkoutItems.find(item => item.eventType || item.eventDate || item.notes);
+
+  console.log('Checkout: Cart item with event info:', cartItemWithEventInfo);
+
+  // Parse event metadata from cart item notes if available
+  const parseEventMetadata = (notes: string | undefined) => {
+    if (!notes || !notes.includes('Event Builder:')) return null;
+
+    const guestSizeMatch = notes.match(/Guest Size - ([^,]+)/);
+    const venueMatch = notes.match(/Venue - ([^,]+)/);
+    const budgetMatch = notes.match(/Budget - ([^,]+)/);
+
+    return {
+      guestSize: guestSizeMatch ? guestSizeMatch[1].trim() : null,
+      venueType: venueMatch ? venueMatch[1].trim() : null,
+      budget: budgetMatch ? budgetMatch[1].trim() : null,
+    };
+  };
+
+  const parsedMetadata = parseEventMetadata(cartItemWithEventInfo?.notes);
+  console.log('Checkout: Parsed metadata from cart:', parsedMetadata);
+
+  // Map guest size to approximate guest count
+  const guestSizeToCount: Record<string, string> = {
+    'intimate': '50',
+    'medium': '100',
+    'large': '200',
+    'grand': '500',
+  };
+
+  // Map budget ranges to midpoint values
+  const budgetToValue: Record<string, string> = {
+    'budget-friendly': '500000',
+    'moderate': '1500000',
+    'luxury': '5000000',
+    'ultra-luxury': '10000000',
+  };
+
+  // Map venue types to venue names
+  const venueTypeToName: Record<string, string> = {
+    'outdoor': 'Outdoor Venue',
+    'indoor': 'Indoor Venue',
+    'garden': 'Garden Venue',
+    'ballroom': 'Ballroom',
+    'beach': 'Beach Venue',
+    'home': 'Private Residence',
+  };
+
   const [formData, setFormData] = useState({
-    eventType: '',
-    eventDate: '',
-    venue: '',
-    guestCount: '',
-    budget: '',
-    notes: '',
+    eventType: preselectedEventType,
+    eventDate: cartItemWithEventInfo?.eventDate || '',
+    venue: (builderState?.venueType ? venueTypeToName[builderState.venueType] : null) ||
+      (parsedMetadata?.venueType && parsedMetadata.venueType !== 'Not specified' ? venueTypeToName[parsedMetadata.venueType] : null) || '',
+    guestCount: (builderState?.guestSize ? guestSizeToCount[builderState.guestSize] : null) ||
+      (parsedMetadata?.guestSize && parsedMetadata.guestSize !== 'Not specified' ? guestSizeToCount[parsedMetadata.guestSize] : null) || '',
+    budget: (builderState?.budget ? budgetToValue[builderState.budget] : null) ||
+      (parsedMetadata?.budget && parsedMetadata.budget !== 'Not specified' ? budgetToValue[parsedMetadata.budget] : null) || '',
+    notes: cartItemWithEventInfo?.notes || (builderState ? `Theme: ${builderState.theme || 'Not specified'}, Color Palette: ${builderState.colorPalette || 'Not specified'}` : ''),
     customerName: user?.user_metadata?.full_name || '',
     customerEmail: user?.email || '',
     customerPhone: '',
@@ -218,6 +296,13 @@ export default function Checkout() {
       category: item.service.category,
     }));
 
+    console.log('Creating receipt with data:', {
+      userId: user.id,
+      bookingId: bookingId,
+      itemsCount: receiptItems.length,
+      totalAmount: grandTotal
+    });
+
     // Create receipt in database
     const { data: newReceipt, error } = await createReceipt({
       userId: user.id,
@@ -239,20 +324,35 @@ export default function Checkout() {
     if (error) {
       console.error('Failed to create receipt:', error);
       toast.error('Payment successful, but receipt generation failed. Please contact support.');
+
+      // Still show confetti and clear cart even if receipt fails
+      checkoutItems.forEach(item => removeFromCart(item.service.id));
+      setIsProcessing(false);
+      fireConfetti();
     } else if (newReceipt) {
+      console.log('Receipt created successfully:', newReceipt.id);
       setReceiptData(newReceipt);
+
+      // Remove purchased items from cart
+      checkoutItems.forEach(item => removeFromCart(item.service.id));
+      setIsProcessing(false);
+
+      // Fire confetti celebration
+      fireConfetti();
+
+      // Show receipt modal - use a small delay to ensure state updates
+      setTimeout(() => {
+        console.log('Showing receipt modal with data:', newReceipt.id);
+        setShowReceiptModal(true);
+      }, 100);
+    } else {
+      console.warn('Receipt creation returned no data and no error');
+
+      // Still complete the checkout flow
+      checkoutItems.forEach(item => removeFromCart(item.service.id));
+      setIsProcessing(false);
+      fireConfetti();
     }
-
-    // Remove ONLY purchased items from cart
-    checkoutItems.forEach(item => removeFromCart(item.service.id));
-
-    setIsProcessing(false);
-
-    // Fire confetti celebration
-    fireConfetti();
-
-    // Show receipt modal
-    setShowReceiptModal(true);
   };
 
   const handleViewReceipt = () => {

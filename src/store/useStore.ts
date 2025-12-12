@@ -164,9 +164,12 @@ export const useStore = create<AppState>()(
       // Cart
       cart: [],
       addToCart: (service, quantity = 1) => {
+        console.log('Store: addToCart called with service:', service.name, 'quantity:', quantity);
         const { cart } = get();
+        console.log('Store: Current cart length:', cart.length);
         const existing = cart.find((item) => item.service.id === service.id);
         if (existing) {
+          console.log('Store: Service already in cart, updating quantity');
           set({
             cart: cart.map((item) =>
               item.service.id === service.id
@@ -175,11 +178,13 @@ export const useStore = create<AppState>()(
             ),
           });
         } else {
+          console.log('Store: Adding new service to cart');
           set({ cart: [...cart, { service, quantity }] });
         }
 
         // Sync to DB
         const { user, saveToDB, cart: newCart } = get();
+        console.log('Store: New cart length:', newCart.length);
         if (user) saveToDB('cart', newCart);
       },
       removeFromCart: (serviceId) => {
@@ -238,11 +243,11 @@ export const useStore = create<AppState>()(
       addBooking: async (booking) => {
         set({ bookings: [...get().bookings, booking] });
 
-        // Persist to Supabase
+        // Only persist to Supabase if the booking doesn't already have an ID
+        // (If it has an ID, it was already created in Checkout.tsx)
         const { user } = get();
-        if (user) {
+        if (user && !booking.id) {
           const { error } = await supabase.from('bookings').insert({
-            id: booking.id,
             user_id: user.id,
             event_type: booking.eventType,
             event_date: booking.eventDate,

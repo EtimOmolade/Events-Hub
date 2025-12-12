@@ -69,8 +69,8 @@ export function BookingConfirmationDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name || !formData.email) {
-      toast.error('Please fill in required fields');
+    if (!formData.name || !formData.email || !formData.eventType) {
+      toast.error('Please fill in all required fields');
       return;
     }
 
@@ -233,11 +233,12 @@ export function BookingConfirmationDialog({
                 <div className="space-y-2">
                   <Label htmlFor="eventType" className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
-                    Event Type
+                    Event Type *
                   </Label>
                   <Select
                     value={formData.eventType}
                     onValueChange={(value) => setFormData(prev => ({ ...prev, eventType: value }))}
+                    required
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select event type" />

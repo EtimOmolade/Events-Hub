@@ -56,8 +56,15 @@ export default function Cart() {
       toast.error('You need to sign in to checkout');
       navigate('/auth?redirect=/checkout');
     } else {
-      // Pass the selected IDs to checkout
-      navigate('/checkout', { state: { selectedServiceIds: selectedItems } });
+      // Pass the selected IDs and full builder state to checkout
+      console.log('Cart: Navigating to checkout with builder state:', previousBuilderState);
+
+      navigate('/checkout', {
+        state: {
+          selectedServiceIds: selectedItems,
+          builderState: previousBuilderState || null,
+        }
+      });
     }
   };
 

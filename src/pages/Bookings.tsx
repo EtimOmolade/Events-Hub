@@ -167,10 +167,10 @@ export default function Bookings() {
                           <div className="bg-muted/50 p-6 md:w-64 flex flex-col justify-center border-b md:border-b-0 md:border-r border-border">
                             <div className="mb-4">
                               <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${booking.status === 'confirmed'
-                                  ? 'bg-green-500/10 text-green-500 border-green-500/20'
-                                  : booking.status === 'pending'
-                                    ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
-                                    : 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                                ? 'bg-green-500/10 text-green-500 border-green-500/20'
+                                : booking.status === 'pending'
+                                  ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
+                                  : 'bg-blue-500/10 text-blue-500 border-blue-500/20'
                                 }`}>
                                 {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                               </span>
@@ -190,16 +190,22 @@ export default function Bookings() {
                           <div className="flex-1 p-6">
                             <div className="grid md:grid-cols-2 gap-6 mb-6">
                               <div>
-                                <h3 className="font-semibold text-lg mb-2">{booking.eventType}</h3>
+                                <h3 className="font-semibold text-lg mb-2">
+                                  {booking.eventType || 'Vendor Booking'}
+                                </h3>
                                 <div className="space-y-2 text-sm text-muted-foreground">
-                                  <div className="flex items-center gap-2">
-                                    <MapPin className="w-4 h-4 text-gold" />
-                                    <span>{booking.venue}</span>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <Users className="w-4 h-4 text-gold" />
-                                    <span>{booking.guestCount} Guests</span>
-                                  </div>
+                                  {booking.venue && (
+                                    <div className="flex items-center gap-2">
+                                      <MapPin className="w-4 h-4 text-gold" />
+                                      <span>{booking.venue}</span>
+                                    </div>
+                                  )}
+                                  {booking.guestCount > 0 && (
+                                    <div className="flex items-center gap-2">
+                                      <Users className="w-4 h-4 text-gold" />
+                                      <span>{booking.guestCount} Guests</span>
+                                    </div>
+                                  )}
                                   <div className="flex items-center gap-2">
                                     <Clock className="w-4 h-4 text-gold" />
                                     <span>Booked on {format(new Date(booking.createdAt), 'MMM d, yyyy')}</span>
@@ -210,15 +216,21 @@ export default function Bookings() {
                                 <div>
                                   <h4 className="font-medium mb-2 text-sm">Services Included</h4>
                                   <div className="space-y-2">
-                                    {booking.services.map((item: any, i: 0) => (
-                                      <div key={i} className="flex items-center justify-between text-sm bg-muted/30 p-2 rounded">
-                                        <div className="flex items-center gap-2">
-                                          <Package className="w-3 h-3 text-gold" />
-                                          <span>{item.service.name}</span>
-                                          <span className="text-xs text-muted-foreground">x{item.quantity}</span>
+                                    {booking.services.length > 0 ? (
+                                      booking.services.map((item: any, i: number) => (
+                                        <div key={i} className="flex items-center justify-between text-sm bg-muted/30 p-2 rounded">
+                                          <div className="flex items-center gap-2">
+                                            <Package className="w-3 h-3 text-gold" />
+                                            <span>{item.service.name}</span>
+                                            <span className="text-xs text-muted-foreground">x{item.quantity}</span>
+                                          </div>
                                         </div>
-                                      </div>
-                                    ))}
+                                      ))
+                                    ) : (
+                                      <p className="text-sm text-muted-foreground italic">
+                                        Vendor availability booking - details to be confirmed
+                                      </p>
+                                    )}
                                   </div>
                                 </div>
                               </div>

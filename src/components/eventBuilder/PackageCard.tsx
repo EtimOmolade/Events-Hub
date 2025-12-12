@@ -33,8 +33,8 @@ export function PackageCard({ pkg, isSelected, onSelect, onAddToCart, index }: P
       transition={{ delay: index * 0.1 }}
       className={cn(
         "relative rounded-2xl border-2 overflow-hidden transition-all duration-300 cursor-pointer",
-        isSelected 
-          ? "border-gold shadow-gold ring-2 ring-gold/20" 
+        isSelected
+          ? "border-gold shadow-gold ring-2 ring-gold/20"
           : "border-border hover:border-gold/50 hover:shadow-lg",
         pkg.tier === 'standard' && !isSelected && "border-gold/50"
       )}
@@ -126,14 +126,20 @@ export function PackageCard({ pkg, isSelected, onSelect, onAddToCart, index }: P
           <Button
             variant={isSelected ? "gold" : "outline"}
             className="w-full"
-            onClick={onSelect}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect();
+            }}
           >
             {isSelected ? 'Selected' : 'Select Package'}
           </Button>
           <Button
             variant="gold"
             className="w-full"
-            onClick={onAddToCart}
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddToCart();
+            }}
           >
             Add Package to Cart
           </Button>

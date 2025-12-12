@@ -108,8 +108,57 @@ export default function EventBuilder() {
       navigate('/auth');
       return;
     }
-    pkg.services.forEach(service => addToCart(service));
-    toast.success(`${pkg.name} added to cart!`);
+
+    console.log('Adding package to cart:', pkg.name);
+    console.log('Services in package:', pkg.services.length);
+    console.log('Event builder state:', state);
+
+    if (pkg.services.length === 0) {
+      toast.error('This package has no services. Please try a different package.');
+      return;
+    }
+
+    // Create event metadata to store with cart items
+    const eventMetadata = {
+      eventType: state.eventType || undefined,
+      notes: `Event Builder: Theme - ${state.theme || 'Not specified'}, Color - ${state.colorPalette || 'Not specified'}, Guest Size - ${state.guestSize || 'Not specified'}, Venue - ${state.venueType || 'Not specified'}, Budget - ${state.budget || 'Not specified'}`,
+    };
+
+    // Add services to cart with event metadata
+    pkg.services.forEach((service, index) => {
+      console.log(`Adding service ${index + 1}:`, service.name);
+      addToCart(service);
+    });
+
+    // Immediately update cart items with event metadata and persist
+    setTimeout(() => {
+      const currentCart = useStore.getState().cart;
+      const updatedCart = currentCart.map(item => {
+        // If this item is one of the services we just added
+        if (pkg.services.some(s => s.id === item.service.id)) {
+          return { ...item, ...eventMetadata };
+        }
+        return item;
+      });
+
+      // Update the cart with event metadata
+      useStore.setState({ cart: updatedCart });
+
+      // Force save to database
+      const { user, saveToDB } = useStore.getState();
+      if (user) {
+        saveToDB('cart', updatedCart);
+      }
+
+      console.log('Cart updated with event metadata:', updatedCart);
+    }, 100);
+
+    toast.success(`${pkg.name} added to cart! (${pkg.services.length} services)`);
+  };
+
+  const handleViewCart = () => {
+    // Pass the builder state (including event type) to cart
+    navigate('/cart', { state: { builderState: state } });
   };
 
   const updateState = <K extends keyof BuilderState>(key: K, value: BuilderState[K]) => {
@@ -182,7 +231,7 @@ export default function EventBuilder() {
 
                 <div className="flex justify-center gap-4 pt-6">
                   <Button variant="outline" onClick={handleReset}>Start New Plan</Button>
-                  <Button variant="gold" onClick={() => navigate('/cart')}>
+                  <Button variant="gold" onClick={handleViewCart}>
                     <ShoppingCart className="w-4 h-4 mr-2" />
                     View Cart
                   </Button>

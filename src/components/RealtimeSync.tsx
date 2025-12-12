@@ -12,6 +12,9 @@ export const RealtimeSync = () => {
 
     console.log('Setting up Realtime subscription for user:', user.id);
 
+    // Track last update time to prevent race conditions
+    let lastLocalUpdate = 0;
+
     const channel = supabase
       .channel('user_storage_changes')
       .on(
@@ -24,10 +27,26 @@ export const RealtimeSync = () => {
         },
         (payload) => {
           console.log('Realtime update received (storage):', payload);
+
+          // Prevent rehydration if we just made a local update (within 2 seconds)
+          const now = Date.now();
+          if (now - lastLocalUpdate < 2000) {
+            console.log('Skipping rehydration - recent local update detected');
+            return;
+          }
+
+          console.log('Rehydrating from database');
           useStore.getState().hydrateFromDB(user.id);
         }
       )
       .subscribe();
+
+    // Listen for local cart updates to track when we make changes
+    const unsubscribe = useStore.subscribe(
+      () => {
+        lastLocalUpdate = Date.now();
+      }
+    );
 
     const profileChannel = supabase
       .channel('profile_changes')
@@ -51,6 +70,7 @@ export const RealtimeSync = () => {
       .subscribe();
 
     return () => {
+      unsubscribe();
       supabase.removeChannel(channel);
       supabase.removeChannel(profileChannel);
     };
