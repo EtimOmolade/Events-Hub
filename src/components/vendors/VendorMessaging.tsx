@@ -346,7 +346,7 @@ export function VendorMessaging({ isOpen, onClose, initialVendorId }: VendorMess
               </div>
 
               {/* Input Area */}
-              <div className="p-3 md:p-4 bg-background border-t border-border pb-safe">
+<div className="p-3 md:p-4 bg-background border-t border-border pb-safe pb-20 md:pb-24">
                 {isAuthenticated ? (
                   <form
                     onSubmit={(e) => {
