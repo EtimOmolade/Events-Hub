@@ -436,7 +436,13 @@ export default function Checkout() {
       {/* Receipt Modal */}
       <ReceiptModal
         open={showReceiptModal}
-        onOpenChange={setShowReceiptModal}
+        onOpenChange={(open) => {
+          setShowReceiptModal(open);
+          // If closing the modal and we have a receipt, ensure we show success step
+          if (!open && receiptData) {
+            setStep('success');
+          }
+        }}
         receiptData={receiptData}
         onViewReceipt={handleViewReceipt}
         onContinue={handleContinue}
