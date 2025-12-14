@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check, Sparkles, ShoppingCart } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -41,12 +41,33 @@ const initialState: BuilderState = {
 };
 
 export default function EventBuilder() {
+  const location = useLocation();
   const navigate = useNavigate();
   const { addToCart, isAuthenticated } = useStore();
-  const [currentStep, setCurrentStep] = useState(1);
-  const [state, setState] = useState<BuilderState>(initialState);
+
+  // Initialize from navigation state if available (returning from Cart)
+  const savedState = location.state?.builderState as BuilderState | undefined;
+  const savedStep = location.state?.returnStep as number | undefined;
+
+  const [currentStep, setCurrentStep] = useState(savedStep || 1);
+  const [state, setState] = useState<BuilderState>(savedState || initialState);
   const [packages, setPackages] = useState<GeneratedPackage[]>([]);
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
+
+  // Re-generate packages if we're returning to step 5
+  useEffect(() => {
+    if (savedStep === 5 && savedState) {
+      const generatedPackages = generateEventPackages(
+        savedState.eventType!,
+        savedState.theme!,
+        savedState.colorPalette!,
+        savedState.guestSize!,
+        savedState.venueType!,
+        savedState.budget!
+      );
+      setPackages(generatedPackages);
+    }
+  }, []); // Run once on mount
 
   // Scroll to top whenever currentStep changes
   useEffect(() => {
@@ -158,7 +179,13 @@ export default function EventBuilder() {
 
   const handleViewCart = () => {
     // Pass the builder state (including event type) to cart
-    navigate('/cart', { state: { builderState: state } });
+    console.log('EventBuilder: Navigating to cart with state:', state, 'and step:', currentStep);
+    navigate('/cart', {
+      state: {
+        builderState: state,
+        returnStep: currentStep
+      }
+    });
   };
 
   const updateState = <K extends keyof BuilderState>(key: K, value: BuilderState[K]) => {

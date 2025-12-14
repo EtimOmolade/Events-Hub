@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import confetti from 'canvas-confetti';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -137,15 +137,20 @@ export default function Checkout() {
     paymentMethod: 'card',
   });
 
+  const paymentSuccessRef = useRef(false);
+
   // Redirect if no items to checkout
   useEffect(() => {
+    // Don't redirect if we have a receipt (successful payment) or showing modal or payment just succeeded
+    if (receiptData || showReceiptModal || paymentSuccessRef.current) return;
+
     if (cart.length === 0) {
       navigate('/cart');
     } else if (checkoutItems.length === 0) {
       // If we have items in cart but none selected for checkout (and we are here), redirect
       navigate('/cart');
     }
-  }, [cart, checkoutItems, navigate]);
+  }, [cart, checkoutItems, navigate, receiptData, showReceiptModal]);
 
   // Update form data when user loads
   useEffect(() => {
@@ -303,6 +308,29 @@ export default function Checkout() {
       totalAmount: grandTotal
     });
 
+    // Prepare receipt data locally first (optimistic UI)
+    const tempReceiptData: ReceiptData = {
+      id: crypto.randomUUID(), // Temporary ID
+      receiptNumber: `INV-${new Date().getFullYear()}-${Math.floor(Math.random() * 99999).toString().padStart(5, '0')}`,
+      customerName: formData.customerName,
+      customerEmail: formData.customerEmail,
+      eventType: formData.eventType,
+      eventDate: formData.eventDate,
+      venue: formData.venue,
+      paymentReference: `PAY-${Math.random().toString(36).substring(2, 14).toUpperCase()}`,
+      paymentMethod: formData.paymentMethod,
+      subtotal: total,
+      serviceFee: serviceFee,
+      vatAmount: 0,
+      discountAmount: 0,
+      totalAmount: grandTotal,
+      currency: 'NGN',
+      status: 'paid',
+      items: receiptItems,
+      createdAt: new Date().toISOString(),
+      paymentDate: new Date().toISOString(),
+    };
+
     // Create receipt in database
     const { data: newReceipt, error } = await createReceipt({
       userId: user.id,
@@ -321,38 +349,33 @@ export default function Checkout() {
       items: receiptItems,
     });
 
+    // Use DB receipt if available, otherwise use temporary one
+    const finalReceipt = newReceipt || tempReceiptData;
+
     if (error) {
-      console.error('Failed to create receipt:', error);
-      toast.error('Payment successful, but receipt generation failed. Please contact support.');
-
-      // Still show confetti and clear cart even if receipt fails
-      checkoutItems.forEach(item => removeFromCart(item.service.id));
-      setIsProcessing(false);
-      fireConfetti();
-    } else if (newReceipt) {
-      console.log('Receipt created successfully:', newReceipt.id);
-      setReceiptData(newReceipt);
-
-      // Remove purchased items from cart
-      checkoutItems.forEach(item => removeFromCart(item.service.id));
-      setIsProcessing(false);
-
-      // Fire confetti celebration
-      fireConfetti();
-
-      // Show receipt modal - use a small delay to ensure state updates
-      setTimeout(() => {
-        console.log('Showing receipt modal with data:', newReceipt.id);
-        setShowReceiptModal(true);
-      }, 100);
+      console.error('Failed to save receipt to DB, using temporary data:', error);
+      toast.error('Payment successful! Receipt generated (local copy).');
     } else {
-      console.warn('Receipt creation returned no data and no error');
-
-      // Still complete the checkout flow
-      checkoutItems.forEach(item => removeFromCart(item.service.id));
-      setIsProcessing(false);
-      fireConfetti();
+      console.log('Receipt created successfully:', finalReceipt.id);
     }
+
+    setReceiptData(finalReceipt);
+
+    // Mark payment as successful to prevent redirect
+    paymentSuccessRef.current = true;
+
+    // Remove purchased items from cart
+    checkoutItems.forEach(item => removeFromCart(item.service.id));
+    setIsProcessing(false);
+
+    // Fire confetti celebration
+    fireConfetti();
+
+    // Show receipt modal - use a small delay to ensure state updates
+    setTimeout(() => {
+      console.log('Showing receipt modal with data:', finalReceipt.id);
+      setShowReceiptModal(true);
+    }, 100);
   };
 
   const handleViewReceipt = () => {

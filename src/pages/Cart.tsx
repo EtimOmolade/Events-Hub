@@ -13,6 +13,7 @@ export default function Cart() {
   const navigate = useNavigate();
   const location = useLocation();
   const previousBuilderState = location.state?.builderState;
+  const returnStep = location.state?.returnStep;
 
   const { cart, removeFromCart, updateCartQuantity, getCartTotal, isAuthenticated } = useStore();
 
@@ -71,7 +72,13 @@ export default function Cart() {
   const handleBack = () => {
     if (previousBuilderState) {
       // Navigate back to Event Builder with state preserved
-      navigate('/event-builder', { state: { builderState: previousBuilderState } });
+      console.log('Cart: Returning to EventBuilder with step:', returnStep);
+      navigate('/event-builder', {
+        state: {
+          builderState: previousBuilderState,
+          returnStep: returnStep
+        }
+      });
     } else {
       navigate(-1); // fallback
     }
