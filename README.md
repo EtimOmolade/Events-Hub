@@ -4,7 +4,6 @@ Link to [EventHub](https://ladeeventshub.netlify.app/) on **Netlify**.
 
 **Events Hub** is a comprehensive, modern event planning platform designed to streamline the process of organizing events. From intimate gatherings to grand celebrations, Events Hub empowers users to browse services, build custom event packages, and manage bookings with ease.
 
----
 ## 🚀 Features
 
 -   **Smart Event Builder**: A step-by-step guided experience to create custom event packages based on your specific needs (type, theme, guest count, budget).
@@ -42,7 +41,6 @@ This project is built with a modern, robust technology stack ensuring performanc
 -   **Sonner**: An opinionated toast component for React.
 -   **html2canvas & jsPDF**: Client-side PDF generation for receipts.
 
----
 ## 🔑 Key Functionalities
 
 1.  **Event Builder Flow**: Users can define their event parameters (type, theme, budget) and receive tailored package recommendations.
@@ -51,12 +49,10 @@ This project is built with a modern, robust technology stack ensuring performanc
 4.  **Vendor Management**: Detailed vendor profiles with portfolios, ratings, and service listings.
 5.  **Responsive Design**: Fully optimized for mobile, tablet, and desktop devices.
 
----
 ## App Previews
 
 <img width="1351" height="613" alt="Screenshot (83)" src="https://github.com/user-attachments/assets/96954b83-50e0-4f54-bf17-2216b16db2b4" />
 
----
 ## 🤝 Acknowledgment
 
 Special thanks to the open-source community for the amazing tools and libraries that made this project possible.
@@ -66,7 +62,6 @@ Special thanks to the open-source community for the amazing tools and libraries 
 -   [Vite](https://vitejs.dev/) for the lightning-fast development environment.
 -   [Tailwind CSS](https://tailwindcss.com/) for the flexible styling system.
 
----
 
 ### *Developer*
 **Omolade Anthonia Etim**
