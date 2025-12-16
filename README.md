@@ -1,73 +1,76 @@
-# Welcome to your Lovable project
+# Events Hub
 
-## Project info
+Link to [EventHub](https://ladeeventshub.netlify.app/) on **Netlify**.
 
-**URL**: https://lovable.dev/projects/9c1453bc-ed66-472d-8326-1db14b2d1bb7
+**Events Hub** is a comprehensive, modern event planning platform designed to streamline the process of organizing events. From intimate gatherings to grand celebrations, Events Hub empowers users to browse services, build custom event packages, and manage bookings with ease.
 
-## How can I edit this code?
+---
+## 🚀 Features
 
-There are several ways of editing your application.
+-   **Smart Event Builder**: A step-by-step guided experience to create custom event packages based on your specific needs (type, theme, guest count, budget).
+-   **AI Event Planner**: Intelligent recommendations and planning assistance to help visualize your perfect event.
+-   **Service Marketplace**: Browse a wide range of vendors and services including venues, catering, photography, and more.
+-   **Seamless Checkout**: Secure cart management and checkout process with instant receipt generation.
+-   **Real-time Availability**: Live updates on vendor availability and booking status.
+-   **User Dashboard**: Manage your bookings, saved plans, and account details in one place.
+-   **Admin Portal**: Dedicated tools for administrators to manage services, vendors, and categories.
 
-**Use Lovable**
+## 🛠️ Tech Stack
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/9c1453bc-ed66-472d-8326-1db14b2d1bb7) and start prompting.
+This project is built with a modern, robust technology stack ensuring performance, scalability, and a premium user experience.
 
-Changes made via Lovable will be committed automatically to this repo.
+### Frontend
+-   **React** (v18): UI library for building interactive interfaces.
+-   **TypeScript**: Static typing for better developer experience and code quality.
+-   **Vite**: Next-generation frontend tooling for fast builds and hot module replacement.
+-   **Tailwind CSS**: Utility-first CSS framework for rapid and responsive styling.
+-   **Framer Motion**: Production-ready animation library for React.
+-   **Shadcn UI**: Reusable components built with Radix UI and Tailwind CSS.
+-   **Lucide React**: Beautiful, consistent icons.
 
-**Use your preferred IDE**
+### State Management & Data
+-   **Zustand**: Small, fast, and scalable bearbones state-management solution.
+-   **TanStack Query**: Powerful asynchronous state management for server state.
+-   **React Router**: Declarative routing for React applications.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Backend & Services
+-   **Supabase**: Open source Firebase alternative for Authentication, Database, and Real-time subscriptions.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Utilities
+-   **Zod**: TypeScript-first schema declaration and validation.
+-   **React Hook Form**: Performant, flexible and extensible forms.
+-   **Sonner**: An opinionated toast component for React.
+-   **html2canvas & jsPDF**: Client-side PDF generation for receipts.
 
-Follow these steps:
+---
+## 🔑 Key Functionalities
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+1.  **Event Builder Flow**: Users can define their event parameters (type, theme, budget) and receive tailored package recommendations.
+2.  **Cart & Checkout**: Add services or packages to the cart, review selections, and proceed to checkout with automated receipt generation.
+3.  **Authentication**: Secure user login and registration powered by Supabase.
+4.  **Vendor Management**: Detailed vendor profiles with portfolios, ratings, and service listings.
+5.  **Responsive Design**: Fully optimized for mobile, tablet, and desktop devices.
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+---
+## App Previews
 
-# Step 3: Install the necessary dependencies.
-npm i
+<img width="1351" height="613" alt="Screenshot (83)" src="https://github.com/user-attachments/assets/96954b83-50e0-4f54-bf17-2216b16db2b4" />
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+---
+## 🤝 Acknowledgment
 
-**Edit a file directly in GitHub**
+Special thanks to the open-source community for the amazing tools and libraries that made this project possible.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+-   [Radix UI](https://www.radix-ui.com/) for accessible component primitives.
+-   [Supabase](https://supabase.com/) for the incredible backend-as-a-service platform.
+-   [Vite](https://vitejs.dev/) for the lightning-fast development environment.
+-   [Tailwind CSS](https://tailwindcss.com/) for the flexible styling system.
 
-**Use GitHub Codespaces**
+---
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### *Developer*
+**Omolade Anthonia Etim**
 
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/9c1453bc-ed66-472d-8326-1db14b2d1bb7) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+ Software Developer | Tech Enthusiast
+- [Linkedin](https://www.linkedin.com/in/etim-omolade-1134a5212/)
+- [Email](etimanthoniaomolade17@gmail.com)
