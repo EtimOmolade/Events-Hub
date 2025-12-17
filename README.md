@@ -32,7 +32,7 @@ This project is built with a modern, robust technology stack ensuring performanc
 -   **React Router**: Declarative routing for React applications.
 
 ### Backend & Services
--   **Supabase**: Open source Firebase alternative for Authentication, Database, and Real-time subscriptions.
+-   **Supabase**: For Authentication, Database, and Real-time subscriptions.
 
 ### Utilities
 -   **Zod**: TypeScript-first schema declaration and validation.
