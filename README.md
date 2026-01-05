@@ -1,5 +1,5 @@
 # Events Hub
-Link to [EventHub](https://ladeeventshub.netlify.app/) on **Netlify**.
+Link to [EventHub](https://events-hub-ten.vercel.app/) on **Vercel**.
 
 Events Hub is a comprehensive, modern event planning platform designed to streamline the process of organizing events. From intimate gatherings to grand celebrations, Events Hub empowers users to browse services, build custom event packages, and manage bookings with ease.
 
